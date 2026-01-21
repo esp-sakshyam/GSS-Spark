@@ -1204,7 +1204,7 @@ button {
     background: var(--color-text-muted);
 }
 
-/* ===== Enhanced Help Mapping UI ===== */
+/* ===== Help Mapping UI ===== */
 .help-mapping-card {
     grid-column: span 2;
 }
@@ -1221,15 +1221,15 @@ button {
 }
 
 .help-mapping-item {
-    background: var(--color-bg);
-    border-radius: var(--radius-md);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
     padding: var(--spacing-md);
     margin-bottom: var(--spacing-sm);
-    transition: box-shadow var(--transition);
 }
 
-.help-mapping-item:hover {
-    box-shadow: var(--shadow-sm);
+.help-mapping-item:last-child {
+    margin-bottom: 0;
 }
 
 .help-mapping-header {
@@ -1237,28 +1237,6 @@ button {
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-sm);
-}
-
-.help-info {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-}
-
-.help-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    background: var(--color-accent);
-    border-radius: 50%;
-    color: white;
-}
-
-.help-icon svg {
-    width: 18px;
-    height: 18px;
 }
 
 .help-name {
@@ -1277,95 +1255,28 @@ button {
     display: inline-block;
     padding: 4px 10px;
     font-size: 0.75rem;
-    font-weight: 500;
-    border-radius: 20px;
-    white-space: nowrap;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Message tag color classes */
-.tag-medical {
-    background: rgba(239, 68, 68, 0.15);
-    color: #dc2626;
-}
-
-.tag-disaster {
-    background: rgba(249, 115, 22, 0.15);
-    color: #ea580c;
-}
-
-.tag-hazard {
-    background: rgba(234, 179, 8, 0.15);
-    color: #ca8a04;
-}
-
-.tag-search {
-    background: rgba(168, 85, 247, 0.15);
-    color: #9333ea;
-}
-
-.tag-warning {
-    background: rgba(59, 130, 246, 0.15);
-    color: #2563eb;
-}
-
-.tag-clear {
-    background: rgba(34, 197, 94, 0.15);
-    color: #16a34a;
-}
-
-.tag-default {
-    background: rgba(107, 114, 128, 0.15);
-    color: #4b5563;
-}
-
-/* Help Resource Display in Modal */
-.help-resource-display {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
-    background: var(--color-bg);
+    background: var(--color-bg-alt);
+    color: var(--color-text);
     border-radius: var(--radius-sm);
     border: 1px solid var(--color-border);
 }
 
-.help-resource-display svg {
-    width: 20px;
-    height: 20px;
-    color: var(--color-accent);
-}
-
-.help-resource-display span {
-    font-weight: 500;
-}
-
-/* Form hint text */
-.form-hint {
-    font-size: 0.8rem;
-    color: var(--color-text-muted);
-    margin: -4px 0 var(--spacing-sm) 0;
-}
-
-/* Enhanced Checkbox Card Group */
+/* Checkbox Card Group */
 .checkbox-card-group {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: var(--spacing-sm);
-    max-height: 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
     overflow-y: auto;
     padding: var(--spacing-sm);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     background: var(--color-bg);
 }
 
 .checkbox-card {
     display: block;
     cursor: pointer;
-    transition: all var(--transition);
 }
 
 .checkbox-card input[type="checkbox"] {
@@ -1380,31 +1291,30 @@ button {
     gap: var(--spacing-sm);
     padding: var(--spacing-sm) var(--spacing-md);
     background: var(--color-white);
-    border: 2px solid var(--color-border);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
-    transition: all var(--transition);
+    transition: all var(--transition-fast);
 }
 
 .checkbox-card:hover .checkbox-card-content {
-    border-color: var(--color-accent);
-    background: rgba(16, 185, 129, 0.05);
+    border-color: var(--color-secondary);
 }
 
 .checkbox-card input:checked+.checkbox-card-content {
     border-color: var(--color-accent);
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(61, 90, 69, 0.05);
 }
 
 .checkbox-indicator {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border: 2px solid var(--color-border);
     border-radius: 4px;
     flex-shrink: 0;
-    transition: all var(--transition);
+    transition: all var(--transition-fast);
 }
 
 .checkbox-card input:checked+.checkbox-card-content .checkbox-indicator {
@@ -1414,60 +1324,26 @@ button {
 
 .checkbox-card input:checked+.checkbox-card-content .checkbox-indicator::after {
     content: '';
-    width: 6px;
-    height: 10px;
+    width: 5px;
+    height: 9px;
     border: solid white;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
     margin-bottom: 2px;
 }
 
-.message-tag-preview {
-    padding: 2px 8px;
-    font-size: 0.7rem;
+.checkbox-code {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
     font-weight: 600;
-    border-radius: 10px;
+    color: var(--color-accent);
+    background: var(--color-bg-alt);
+    padding: 2px 8px;
+    border-radius: 4px;
     flex-shrink: 0;
 }
 
 .checkbox-label {
     font-size: 0.85rem;
-    line-height: 1.3;
-    color: var(--color-text);
-}
-
-/* Legacy checkbox styles (kept for compatibility) */
-.checkbox-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.checkbox-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background var(--transition);
-}
-
-.checkbox-item:hover {
-    background: var(--color-bg);
-}
-
-.checkbox-item input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    margin-top: 2px;
-    cursor: pointer;
-    accent-color: var(--color-accent);
-    flex-shrink: 0;
-}
-
-.checkbox-item span {
-    font-size: 0.875rem;
-    line-height: 1.4;
     color: var(--color-text);
 }

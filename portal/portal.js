@@ -760,7 +760,7 @@ async function loadIndexes() {
                 return `
                     <div class="index-card help-mapping-card">
                         <div class="index-card-header">
-                            <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;margin-right:8px;vertical-align:middle;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>Help Resource Mapping</h4>
+                            <h4>Help Resource Mapping</h4>
                             <button class="action-btn" onclick="editIndex('${index.type}')" title="Add Entry" style="color: white;">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="12" y1="5" x2="12" y2="19"/>
@@ -775,15 +775,7 @@ async function loadIndexes() {
                     return `
                                     <div class="help-mapping-item">
                                         <div class="help-mapping-header">
-                                            <div class="help-info">
-                                                <span class="help-icon">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                                                        <circle cx="12" cy="7" r="4"/>
-                                                    </svg>
-                                                </span>
-                                                <span class="help-name">${helpName}</span>
-                                            </div>
+                                            <span class="help-name">${helpName}</span>
                                             <button class="action-btn edit" onclick="editMappingEntry('help', '${hid}', '${messageList.join(',')}')" title="Edit">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -794,8 +786,7 @@ async function loadIndexes() {
                                         <div class="help-message-tags">
                                             ${messageList.map(msgCode => {
                         const msgName = indexMappings.message?.[msgCode] || `Code ${msgCode}`;
-                        const tagClass = getMessageTagClass(msgCode);
-                        return `<span class="message-tag ${tagClass}" title="${msgName}">${msgName}</span>`;
+                        return `<span class="message-tag" title="${msgName}">${msgName}</span>`;
                     }).join('')}
                                         </div>
                                     </div>
@@ -856,19 +847,16 @@ function editIndex(type) {
         ).join('');
 
         const messageCheckboxes = indexMappings.message ?
-            Object.entries(indexMappings.message).map(([code, desc]) => {
-                const tagClass = getMessageTagClass(code);
-                return `
-                    <label class="checkbox-card">
-                        <input type="checkbox" name="messageCodes" value="${code}">
-                        <div class="checkbox-card-content">
-                            <span class="checkbox-indicator"></span>
-                            <span class="message-tag-preview ${tagClass}">${code}</span>
-                            <span class="checkbox-label">${desc}</span>
-                        </div>
-                    </label>
-                `;
-            }).join('') : '';
+            Object.entries(indexMappings.message).map(([code, desc]) => `
+                <label class="checkbox-card">
+                    <input type="checkbox" name="messageCodes" value="${code}">
+                    <div class="checkbox-card-content">
+                        <span class="checkbox-indicator"></span>
+                        <span class="checkbox-code">${code}</span>
+                        <span class="checkbox-label">${desc}</span>
+                    </div>
+                </label>
+            `).join('') : '';
 
         showModal(`Add Help Resource Mapping`, `
             <div class="form-group">
@@ -880,7 +868,6 @@ function editIndex(type) {
             </div>
             <div class="form-group">
                 <label class="form-label">Applicable Emergency Types *</label>
-                <p class="form-hint">Select which emergency types this help resource can respond to</p>
                 <div class="checkbox-card-group">
                     ${messageCheckboxes}
                 </div>
@@ -969,33 +956,21 @@ function editMappingEntry(type, code, currentValue) {
         const messageCheckboxes = indexMappings.message ?
             Object.entries(indexMappings.message).map(([msgCode, desc]) => {
                 const isChecked = currentCodes.includes(parseInt(msgCode));
-                const tagClass = getMessageTagClass(msgCode);
                 return `
-                    <label class="checkbox-card ${isChecked ? 'checked' : ''}">
+                    <label class="checkbox-card">
                         <input type="checkbox" name="messageCodes" value="${msgCode}" ${isChecked ? 'checked' : ''}>
                         <div class="checkbox-card-content">
                             <span class="checkbox-indicator"></span>
-                            <span class="message-tag-preview ${tagClass}">${msgCode}</span>
+                            <span class="checkbox-code">${msgCode}</span>
                             <span class="checkbox-label">${desc}</span>
                         </div>
                     </label>
                 `;
             }).join('') : '';
 
-        showModal(`Edit Help Mapping`, `
-            <div class="form-group">
-                <label class="form-label">Help Resource</label>
-                <div class="help-resource-display">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                    </svg>
-                    <span>${helpName}</span>
-                </div>
-            </div>
+        showModal(`Edit Help Mapping: ${helpName}`, `
             <div class="form-group">
                 <label class="form-label">Applicable Emergency Types *</label>
-                <p class="form-hint">Select which emergency types this help resource can respond to</p>
                 <div class="checkbox-card-group">
                     ${messageCheckboxes}
                 </div>
@@ -1193,18 +1168,6 @@ function formatTime(timestamp) {
 function truncate(str, maxLength) {
     if (!str) return '';
     return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
-}
-
-function getMessageTagClass(code) {
-    // Categorize message types for color coding
-    const codeNum = parseInt(code);
-    if (codeNum >= 1 && codeNum <= 3) return 'tag-medical';      // Medical emergencies
-    if (codeNum >= 4 && codeNum <= 6) return 'tag-disaster';     // Search/Rescue, Avalanche, Landslide
-    if (codeNum >= 7 && codeNum <= 8) return 'tag-hazard';       // Fire, Flood
-    if (codeNum === 9) return 'tag-search';                       // Lost/Missing
-    if (codeNum >= 10 && codeNum <= 14) return 'tag-warning';    // Equipment, Weather, Infrastructure, Food, Communication
-    if (codeNum === 15) return 'tag-clear';                       // All Clear
-    return 'tag-default';
 }
 
 async function loadDevicesForSelect() {
