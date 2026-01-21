@@ -69,10 +69,21 @@
     margin-bottom: 2px;
 }
 
-.status-card.available .status-count { color: var(--color-accent); }
-.status-card.busy .status-count { color: var(--color-alert); }
-.status-card.dispatched .status-count { color: #8a7345; }
-.status-card.total .status-count { color: var(--color-primary); }
+.status-card.available .status-count {
+    color: var(--color-accent);
+}
+
+.status-card.busy .status-count {
+    color: var(--color-alert);
+}
+
+.status-card.dispatched .status-count {
+    color: #8a7345;
+}
+
+.status-card.total .status-count {
+    color: var(--color-primary);
+}
 
 .status-label {
     font-size: 0.8rem;

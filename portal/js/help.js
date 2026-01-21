@@ -1,12 +1,12 @@
 /* ===== LifeLine Portal - Help Resources JavaScript ===== */
 
-const { 
-    apiGet, 
+const {
+    apiGet,
     apiPost,
     apiPut,
     apiDelete,
     formatTime,
-    showToast, 
+    showToast,
     openModal,
     closeModal,
     initModalClose,
@@ -43,7 +43,7 @@ function initElements() {
     saveHelpBtn = document.getElementById('saveHelpBtn');
     confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     confirmDispatchBtn = document.getElementById('confirmDispatchBtn');
-    
+
     helpForm = document.getElementById('helpForm');
     helpId = document.getElementById('helpId');
     helpName = document.getElementById('helpName');
@@ -290,7 +290,7 @@ async function confirmDispatch() {
 
     try {
         confirmDispatchBtn.disabled = true;
-        
+
         await apiPut('helps/update.php', {
             HID: dispatchTargetId,
             status: 'dispatched'

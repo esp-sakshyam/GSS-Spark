@@ -1,11 +1,11 @@
 /* ===== LifeLine Portal - Index Mappings JavaScript ===== */
 
-const { 
-    apiGet, 
+const {
+    apiGet,
     apiPost,
     apiPut,
     apiDelete,
-    showToast, 
+    showToast,
     openModal,
     closeModal,
     initModalClose,
@@ -41,7 +41,7 @@ function initElements() {
     addMappingBtn = document.getElementById('addMappingBtn');
     saveMappingBtn = document.getElementById('saveMappingBtn');
     confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-    
+
     mappingForm = document.getElementById('mappingForm');
     mappingId = document.getElementById('mappingId');
     mappingLocation = document.getElementById('mappingLocation');
@@ -163,7 +163,7 @@ function renderMappings() {
 
     mappingsGrid.innerHTML = filteredIndexes.map(index => {
         const help = index.HID ? allHelps.find(h => h.HID == index.HID) : null;
-        
+
         return `
             <div class="mapping-card" data-lid="${index.LID}">
                 <div class="mapping-section">
@@ -222,7 +222,7 @@ function editMapping(lid) {
     mappingId.value = index.LID;
     mappingLocation.value = index.location || '';
     mappingMessage.value = index.message || '';
-    
+
     // Get selected help IDs for this mapping
     const selectedHids = index.HID ? [index.HID] : [];
     renderHelpSelector(selectedHids);
@@ -273,7 +273,7 @@ async function saveMapping() {
     // Get selected help IDs
     const selectedHelps = Array.from(document.querySelectorAll('input[name="selectedHelps"]:checked'))
         .map(cb => cb.value);
-    
+
     // For simplicity, we'll use the first selected help (since schema has single HID)
     const hid = selectedHelps.length > 0 ? selectedHelps[0] : null;
 
