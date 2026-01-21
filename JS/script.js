@@ -1,5 +1,5 @@
 /**
- * SPARK Landing Page - JavaScript
+ * LifeLine Landing Page - JavaScript
  * Emergency Response System for Rural Nepal
  */
 
@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initWorkflowAnimation();
     initSmoothScroll();
     initNavHighlight();
+    initNavScroll();
 });
 
 /**
@@ -17,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function initScrollAnimations() {
     const observerOptions = {
         root: null,
-        rootMargin: '0px 0px -50px 0px',
+        rootMargin: '0px 0px -80px 0px',
         threshold: 0.1
     };
 
@@ -28,6 +29,11 @@ function initScrollAnimations() {
             }
         });
     }, observerOptions);
+
+    // Observe problem cards
+    document.querySelectorAll('.problem-card').forEach(card => {
+        observer.observe(card);
+    });
 
     // Observe workflow items
     document.querySelectorAll('.workflow-item').forEach(item => {
@@ -64,7 +70,7 @@ function initWorkflowAnimation() {
         intervalId = setInterval(() => {
             activateStep(currentStep);
             currentStep = (currentStep + 1) % workflowItems.length;
-        }, 1500);
+        }, 2000);
     };
 
     const stopAnimation = () => {
@@ -126,7 +132,7 @@ function initNavHighlight() {
     const navLinks = document.querySelectorAll('.nav-links a');
 
     const highlightNav = () => {
-        const scrollPos = window.scrollY + 100;
+        const scrollPos = window.scrollY + 120;
 
         sections.forEach(section => {
             const sectionTop = section.offsetTop;
@@ -149,13 +155,39 @@ function initNavHighlight() {
 }
 
 /**
- * Add active state styling for nav links
+ * Nav background change on scroll
  */
-const style = document.createElement('style');
-style.textContent = `
-  .nav-links a.active {
-    color: #1A1A1A;
-    font-weight: 500;
-  }
-`;
-document.head.appendChild(style);
+function initNavScroll() {
+    const nav = document.querySelector('.nav');
+
+    const handleScroll = () => {
+        if (window.scrollY > 50) {
+            nav.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.08)';
+        } else {
+            nav.style.boxShadow = 'none';
+        }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+}
+
+/**
+ * Counter animation for stats (can be extended)
+ */
+function animateCounter(element, target, duration = 2000) {
+    const start = 0;
+    const increment = target / (duration / 16);
+    let current = start;
+
+    const updateCounter = () => {
+        current += increment;
+        if (current < target) {
+            element.textContent = Math.floor(current);
+            requestAnimationFrame(updateCounter);
+        } else {
+            element.textContent = target;
+        }
+    };
+
+    updateCounter();
+}
