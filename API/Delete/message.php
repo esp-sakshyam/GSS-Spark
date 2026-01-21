@@ -21,11 +21,11 @@ if (!isset($_GET['id'])) {
     sendResponse(false, null, 'Message ID is required', 400);
 }
 
-$messageId = (int)$_GET['id'];
+$messageId = (int) $_GET['id'];
 
 try {
     $db = getDB();
-    
+
     // Check if message exists and get its details for logging
     $checkStmt = $db->prepare("
         SELECT m.MID, m.message_code, m.status, d.device_name 
@@ -35,33 +35,33 @@ try {
     ");
     $checkStmt->execute(['mid' => $messageId]);
     $message = $checkStmt->fetch();
-    
+
     if (!$message) {
         sendResponse(false, null, 'Message not found', 404);
     }
-    
+
     // Warn if deleting non-resolved message
     if ($message['status'] !== 'resolved') {
         // Still allow deletion but include warning
         $warning = 'Warning: Deleting a message that is not resolved';
     }
-    
+
     // Delete message
     $deleteStmt = $db->prepare("DELETE FROM messages WHERE MID = :mid");
     $deleteStmt->execute(['mid' => $messageId]);
-    
+
     $response = [
         'deleted_id' => $messageId,
         'device_name' => $message['device_name'],
         'message_code' => $message['message_code']
     ];
-    
+
     if (isset($warning)) {
         $response['warning'] = $warning;
     }
-    
+
     sendResponse(true, $response, 'Message deleted successfully');
-    
+
 } catch (PDOException $e) {
     error_log('Message delete error: ' . $e->getMessage());
     sendResponse(false, null, 'Database error: ' . $e->getMessage(), 500);

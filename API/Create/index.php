@@ -46,39 +46,39 @@ if ($mappingJson === false) {
 
 try {
     $db = getDB();
-    
+
     // Check if type already exists (unique constraint)
     $checkStmt = $db->prepare("SELECT IID FROM indexes WHERE type = :type");
     $checkStmt->execute(['type' => $type]);
-    
+
     if ($checkStmt->fetch()) {
         sendResponse(false, null, 'Index mapping for this type already exists. Use update instead.', 409);
     }
-    
+
     // Insert new index mapping
     $stmt = $db->prepare("
         INSERT INTO indexes (type, mapping, description, updated_at) 
         VALUES (:type, :mapping, :description, NOW())
     ");
-    
+
     $stmt->execute([
         'type' => $type,
         'mapping' => $mappingJson,
         'description' => $description
     ]);
-    
+
     $indexId = $db->lastInsertId();
-    
+
     // Fetch created index
     $fetchStmt = $db->prepare("SELECT * FROM indexes WHERE IID = :iid");
     $fetchStmt->execute(['iid' => $indexId]);
     $index = $fetchStmt->fetch();
-    
+
     // Decode mapping JSON for response
     $index['mapping'] = json_decode($index['mapping'], true);
-    
+
     sendResponse(true, $index, 'Index mapping created successfully', 201);
-    
+
 } catch (PDOException $e) {
     error_log('Index create error: ' . $e->getMessage());
     sendResponse(false, null, 'Database error: ' . $e->getMessage(), 500);
