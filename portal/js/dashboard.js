@@ -56,7 +56,7 @@ function initEventListeners() {
 async function loadDashboard() {
     console.log('[Dashboard] loadDashboard() called');
     console.log('[Dashboard] apiGet function:', apiGet);
-    
+
     try {
         console.log('[Dashboard] Making API requests...');
         // Load all data in parallel
@@ -66,7 +66,7 @@ async function loadDashboard() {
             apiGet('Read/helps.php'),
             apiGet('Read/index.php')
         ]);
-        
+
         console.log('[Dashboard] API responses received:', { messagesRes, devicesRes, helpsRes, indexesRes });
 
         // Extract data from nested response
