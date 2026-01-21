@@ -19,11 +19,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 try {
     $db = getDB();
-    
+
     // Check if specific device ID is requested
     if (isset($_GET['id'])) {
-        $deviceId = (int)$_GET['id'];
-        
+        $deviceId = (int) $_GET['id'];
+
         $stmt = $db->prepare("
             SELECT d.*, 
                    JSON_UNQUOTE(JSON_EXTRACT(i.mapping, CONCAT('\$.', d.LID))) as location_name
@@ -33,14 +33,14 @@ try {
         ");
         $stmt->execute(['did' => $deviceId]);
         $device = $stmt->fetch();
-        
+
         if (!$device) {
             sendResponse(false, null, 'Device not found', 404);
         }
-        
+
         sendResponse(true, $device, 'Device retrieved successfully');
     }
-    
+
     // Build query for multiple devices
     $query = "
         SELECT d.*, 
@@ -50,40 +50,40 @@ try {
         WHERE 1=1
     ";
     $params = [];
-    
+
     // Filter by status
     if (isset($_GET['status'])) {
         $query .= " AND d.status = :status";
         $params['status'] = $_GET['status'];
     }
-    
+
     // Filter by location
     if (isset($_GET['lid'])) {
         $query .= " AND d.LID = :lid";
-        $params['lid'] = (int)$_GET['lid'];
+        $params['lid'] = (int) $_GET['lid'];
     }
-    
+
     // Order by
     $query .= " ORDER BY d.last_ping DESC";
-    
+
     // Pagination
-    $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-    $limit = isset($_GET['limit']) ? min(100, max(1, (int)$_GET['limit'])) : 50;
+    $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+    $limit = isset($_GET['limit']) ? min(100, max(1, (int) $_GET['limit'])) : 50;
     $offset = ($page - 1) * $limit;
-    
+
     $query .= " LIMIT :limit OFFSET :offset";
-    
+
     $stmt = $db->prepare($query);
-    
+
     foreach ($params as $key => $value) {
         $stmt->bindValue($key, $value);
     }
     $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
     $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
-    
+
     $stmt->execute();
     $devices = $stmt->fetchAll();
-    
+
     // Get total count for pagination
     $countQuery = "SELECT COUNT(*) FROM devices WHERE 1=1";
     if (isset($_GET['status'])) {
@@ -92,27 +92,27 @@ try {
     if (isset($_GET['lid'])) {
         $countQuery .= " AND LID = :lid";
     }
-    
+
     $countStmt = $db->prepare($countQuery);
     if (isset($_GET['status'])) {
         $countStmt->bindValue('status', $_GET['status']);
     }
     if (isset($_GET['lid'])) {
-        $countStmt->bindValue('lid', (int)$_GET['lid'], PDO::PARAM_INT);
+        $countStmt->bindValue('lid', (int) $_GET['lid'], PDO::PARAM_INT);
     }
     $countStmt->execute();
     $total = $countStmt->fetchColumn();
-    
+
     sendResponse(true, [
         'devices' => $devices,
         'pagination' => [
             'page' => $page,
             'limit' => $limit,
-            'total' => (int)$total,
+            'total' => (int) $total,
             'pages' => ceil($total / $limit)
         ]
     ], 'Devices retrieved successfully');
-    
+
 } catch (PDOException $e) {
     error_log('Device read error: ' . $e->getMessage());
     sendResponse(false, null, 'Database error: ' . $e->getMessage(), 500);

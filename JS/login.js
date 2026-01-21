@@ -3,7 +3,7 @@
  * Handles form validation, submission, and UI interactions
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initLoginForm();
     initPasswordToggle();
 });
@@ -17,35 +17,35 @@ function initLoginForm() {
     const passwordInput = document.getElementById('password');
     const submitBtn = document.getElementById('submitBtn');
     const alertMessage = document.getElementById('alertMessage');
-    
+
     if (!form) return;
-    
+
     // Real-time validation on blur
     emailInput.addEventListener('blur', () => validateEmail(emailInput));
     passwordInput.addEventListener('blur', () => validatePassword(passwordInput));
-    
+
     // Clear errors on focus
     emailInput.addEventListener('focus', () => clearError('email'));
     passwordInput.addEventListener('focus', () => clearError('password'));
-    
+
     // Form submission
-    form.addEventListener('submit', async function(e) {
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        
+
         // Reset alert
         hideAlert();
-        
+
         // Validate all fields
         const isEmailValid = validateEmail(emailInput);
         const isPasswordValid = validatePassword(passwordInput);
-        
+
         if (!isEmailValid || !isPasswordValid) {
             return;
         }
-        
+
         // Show loading state
         setLoadingState(true);
-        
+
         try {
             const response = await fetch('API/auth/login.php', {
                 method: 'POST',
@@ -58,17 +58,17 @@ function initLoginForm() {
                     remember: document.getElementById('remember').checked
                 })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 showAlert('Login successful! Redirecting...', 'success');
-                
+
                 // Store session data if needed
                 if (data.data && data.data.token) {
                     localStorage.setItem('lifeline_token', data.data.token);
                 }
-                
+
                 // Redirect to portal after short delay
                 setTimeout(() => {
                     window.location.href = 'portal/index.php';
@@ -76,7 +76,7 @@ function initLoginForm() {
             } else {
                 showAlert(data.message || 'Invalid email or password', 'error');
                 setLoadingState(false);
-                
+
                 // Shake the form on error
                 form.classList.add('shake');
                 setTimeout(() => form.classList.remove('shake'), 500);
@@ -95,18 +95,18 @@ function initLoginForm() {
 function validateEmail(input) {
     const email = input.value.trim();
     const errorElement = document.getElementById('emailError');
-    
+
     if (!email) {
         showError(input, errorElement, 'Email is required');
         return false;
     }
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
         showError(input, errorElement, 'Please enter a valid email address');
         return false;
     }
-    
+
     clearError('email');
     return true;
 }
@@ -117,17 +117,17 @@ function validateEmail(input) {
 function validatePassword(input) {
     const password = input.value;
     const errorElement = document.getElementById('passwordError');
-    
+
     if (!password) {
         showError(input, errorElement, 'Password is required');
         return false;
     }
-    
+
     if (password.length < 6) {
         showError(input, errorElement, 'Password must be at least 6 characters');
         return false;
     }
-    
+
     clearError('password');
     return true;
 }
@@ -147,7 +147,7 @@ function showError(input, errorElement, message) {
 function clearError(fieldName) {
     const input = document.getElementById(fieldName);
     const errorElement = document.getElementById(fieldName + 'Error');
-    
+
     if (input) input.classList.remove('error');
     if (errorElement) {
         errorElement.textContent = '';
@@ -161,7 +161,7 @@ function clearError(fieldName) {
 function showAlert(message, type) {
     const alertElement = document.getElementById('alertMessage');
     if (!alertElement) return;
-    
+
     alertElement.textContent = message;
     alertElement.className = 'alert visible ' + type;
 }
@@ -172,7 +172,7 @@ function showAlert(message, type) {
 function hideAlert() {
     const alertElement = document.getElementById('alertMessage');
     if (!alertElement) return;
-    
+
     alertElement.className = 'alert';
     alertElement.textContent = '';
 }
@@ -183,7 +183,7 @@ function hideAlert() {
 function setLoadingState(isLoading) {
     const submitBtn = document.getElementById('submitBtn');
     if (!submitBtn) return;
-    
+
     if (isLoading) {
         submitBtn.classList.add('loading');
         submitBtn.disabled = true;
@@ -199,10 +199,10 @@ function setLoadingState(isLoading) {
 function initPasswordToggle() {
     const toggleBtn = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');
-    
+
     if (!toggleBtn || !passwordInput) return;
-    
-    toggleBtn.addEventListener('click', function() {
+
+    toggleBtn.addEventListener('click', function () {
         const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
         passwordInput.setAttribute('type', type);
         this.classList.toggle('active');

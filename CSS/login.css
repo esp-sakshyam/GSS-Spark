@@ -81,7 +81,7 @@ a {
     left: 0;
     right: 0;
     bottom: 0;
-    background-image: 
+    background-image:
         radial-gradient(circle at 25% 25%, rgba(61, 90, 69, 0.03) 0%, transparent 50%),
         radial-gradient(circle at 75% 75%, rgba(196, 167, 125, 0.03) 0%, transparent 50%);
     pointer-events: none;
@@ -94,9 +94,9 @@ a {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, 
-        rgba(245, 243, 239, 0.9) 0%, 
-        rgba(232, 228, 222, 0.9) 100%);
+    background: linear-gradient(135deg,
+            rgba(245, 243, 239, 0.9) 0%,
+            rgba(232, 228, 222, 0.9) 100%);
     pointer-events: none;
     z-index: 0;
 }
@@ -121,6 +121,7 @@ a {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -233,7 +234,7 @@ a {
     box-shadow: 0 0 0 4px rgba(61, 90, 69, 0.1);
 }
 
-.form-input:focus + .input-icon,
+.form-input:focus+.input-icon,
 .input-wrapper:focus-within .input-icon {
     color: var(--color-accent);
 }
@@ -336,7 +337,7 @@ a {
     border-color: var(--color-text-muted);
 }
 
-.remember-me input:checked ~ .checkmark {
+.remember-me input:checked~.checkmark {
     background: var(--color-accent);
     border-color: var(--color-accent);
 }
@@ -354,7 +355,7 @@ a {
     transform: rotate(45deg);
 }
 
-.remember-me input:checked ~ .checkmark::after {
+.remember-me input:checked~.checkmark::after {
     display: block;
     animation: checkmark 0.2s ease-out;
 }
@@ -364,6 +365,7 @@ a {
         opacity: 0;
         transform: rotate(45deg) scale(0.5);
     }
+
     to {
         opacity: 1;
         transform: rotate(45deg) scale(1);
@@ -392,6 +394,7 @@ a {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -442,10 +445,10 @@ a {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, 
-        transparent, 
-        rgba(255, 255, 255, 0.1), 
-        transparent);
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.1),
+            transparent);
     transition: left 0.5s ease;
 }
 
@@ -503,6 +506,7 @@ a {
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(360deg);
     }
@@ -563,6 +567,7 @@ a {
         opacity: 0;
         transform: translateX(30px);
     }
+
     to {
         opacity: 1;
         transform: translateX(0);
@@ -581,10 +586,13 @@ a {
 }
 
 @keyframes pulse {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
         opacity: 1;
     }
+
     50% {
         transform: scale(1.05);
         opacity: 0.8;
@@ -648,19 +656,19 @@ a {
     .login-container {
         flex-direction: column-reverse;
     }
-    
+
     .info-panel {
         min-height: 300px;
     }
-    
+
     .info-content {
         padding: var(--spacing-lg);
     }
-    
+
     .info-title {
         font-size: 1.5rem;
     }
-    
+
     .info-icon svg {
         width: 60px;
         height: 60px;
@@ -671,12 +679,12 @@ a {
     .info-panel {
         display: none;
     }
-    
+
     .login-card {
         padding: var(--spacing-lg);
         min-height: 100vh;
     }
-    
+
     .login-form {
         max-width: 100%;
     }
@@ -686,21 +694,22 @@ a {
     .login-card {
         padding: var(--spacing-md);
     }
-    
+
     .logo-text {
         font-size: 1.5rem;
     }
-    
+
     .logo svg {
         width: 32px;
         height: 32px;
     }
-    
+
     .form-input {
         padding: 0.75rem 2.5rem;
-        font-size: 16px; /* Prevent zoom on iOS */
+        font-size: 16px;
+        /* Prevent zoom on iOS */
     }
-    
+
     .btn-login {
         padding: 0.875rem var(--spacing-md);
     }
@@ -717,6 +726,7 @@ a {
 
 /* ===== Reduced Motion ===== */
 @media (prefers-reduced-motion: reduce) {
+
     *,
     *::before,
     *::after {

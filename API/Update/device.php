@@ -23,26 +23,26 @@ if (!isset($input['DID'])) {
     sendResponse(false, null, 'Device ID (DID) is required', 400);
 }
 
-$deviceId = (int)$input['DID'];
+$deviceId = (int) $input['DID'];
 
 try {
     $db = getDB();
-    
+
     // Check if device exists
     $checkStmt = $db->prepare("SELECT DID FROM devices WHERE DID = :did");
     $checkStmt->execute(['did' => $deviceId]);
-    
+
     if (!$checkStmt->fetch()) {
         sendResponse(false, null, 'Device not found', 404);
     }
-    
+
     // Build update query dynamically
     $updates = [];
     $params = ['did' => $deviceId];
-    
+
     // Updatable fields
     $allowedFields = ['device_name', 'LID', 'status', 'battery_level', 'last_ping'];
-    
+
     foreach ($allowedFields as $field) {
         if (isset($input[$field])) {
             // Validate status
@@ -52,29 +52,29 @@ try {
                     sendResponse(false, null, 'Invalid status. Must be one of: ' . implode(', ', $validStatuses), 400);
                 }
             }
-            
+
             // Validate battery level
             if ($field === 'battery_level') {
-                $input[$field] = (int)$input[$field];
+                $input[$field] = (int) $input[$field];
                 if ($input[$field] < 0 || $input[$field] > 100) {
                     sendResponse(false, null, 'Battery level must be between 0 and 100', 400);
                 }
             }
-            
+
             $updates[] = "$field = :$field";
             $params[$field] = $input[$field];
         }
     }
-    
+
     if (empty($updates)) {
         sendResponse(false, null, 'No fields to update', 400);
     }
-    
+
     // Execute update
     $query = "UPDATE devices SET " . implode(', ', $updates) . " WHERE DID = :did";
     $stmt = $db->prepare($query);
     $stmt->execute($params);
-    
+
     // Fetch updated device
     $fetchStmt = $db->prepare("
         SELECT d.*, 
@@ -85,9 +85,9 @@ try {
     ");
     $fetchStmt->execute(['did' => $deviceId]);
     $device = $fetchStmt->fetch();
-    
+
     sendResponse(true, $device, 'Device updated successfully');
-    
+
 } catch (PDOException $e) {
     error_log('Device update error: ' . $e->getMessage());
     sendResponse(false, null, 'Database error: ' . $e->getMessage(), 500);
