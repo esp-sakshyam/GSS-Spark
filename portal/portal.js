@@ -771,6 +771,7 @@ async function loadIndexes() {
                         <div class="index-card-body help-mapping-body">
                             ${Object.entries(index.mapping).map(([hid, msgCodes]) => {
                     const helpName = helpsData[hid] || `Help #${hid}`;
+
                     const messageList = Array.isArray(msgCodes) ? msgCodes : [];
                     return `
                                     <div class="help-mapping-item">
