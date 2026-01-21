@@ -210,7 +210,7 @@ h3 {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
     transition: left 0.5s ease;
 }
 
@@ -278,8 +278,13 @@ h3 {
 }
 
 @keyframes bgPulse {
-    0% { opacity: 0.7; }
-    100% { opacity: 1; }
+    0% {
+        opacity: 0.7;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 .hero-container {
@@ -332,11 +337,14 @@ h3 {
 }
 
 @keyframes pulse-dot {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 1;
         transform: scale(1);
         box-shadow: 0 0 0 0 rgba(61, 90, 69, 0.4);
     }
+
     50% {
         opacity: 0.8;
         transform: scale(1.2);
@@ -375,7 +383,9 @@ h3 {
 }
 
 @keyframes underlineGrow {
-    to { transform: scaleX(1); }
+    to {
+        transform: scaleX(1);
+    }
 }
 
 .hero-subtitle {
@@ -566,7 +576,9 @@ h3 {
 }
 
 @keyframes rotateBg {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .flow-node {
@@ -595,8 +607,15 @@ h3 {
 }
 
 @keyframes pulseAlert {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(139, 58, 47, 0.3); }
-    50% { box-shadow: 0 0 20px 5px rgba(139, 58, 47, 0.15); }
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(139, 58, 47, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 20px 5px rgba(139, 58, 47, 0.15);
+    }
 }
 
 .node-gateway {
@@ -665,16 +684,30 @@ h3 {
     border-radius: 2px;
 }
 
-.signal-waves span:nth-child(1) { animation-delay: 0s; height: 8px; }
-.signal-waves span:nth-child(2) { animation-delay: 0.15s; height: 14px; }
-.signal-waves span:nth-child(3) { animation-delay: 0.3s; height: 10px; }
+.signal-waves span:nth-child(1) {
+    animation-delay: 0s;
+    height: 8px;
+}
+
+.signal-waves span:nth-child(2) {
+    animation-delay: 0.15s;
+    height: 14px;
+}
+
+.signal-waves span:nth-child(3) {
+    animation-delay: 0.3s;
+    height: 10px;
+}
 
 @keyframes waveBar {
-    0%, 100% { 
+
+    0%,
+    100% {
         opacity: 0.3;
         transform: scaleY(0.7);
     }
-    50% { 
+
+    50% {
         opacity: 1;
         transform: scaleY(1);
     }
@@ -698,8 +731,17 @@ h3 {
 }
 
 @keyframes arrowPulse {
-    0%, 100% { transform: translateX(0); opacity: 0.7; }
-    50% { transform: translateX(3px); opacity: 1; }
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: 0.7;
+    }
+
+    50% {
+        transform: translateX(3px);
+        opacity: 1;
+    }
 }
 
 .arrow-label {
@@ -722,8 +764,15 @@ h3 {
 }
 
 @keyframes pulse-light {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
 }
 
 /* Hero Features */
@@ -942,8 +991,13 @@ h3 {
 }
 
 @keyframes floatBg {
-    0% { transform: translate(0, 0); }
-    100% { transform: translate(50px, -30px); }
+    0% {
+        transform: translate(0, 0);
+    }
+
+    100% {
+        transform: translate(50px, -30px);
+    }
 }
 
 .problem-header {
@@ -1114,9 +1168,24 @@ h3 {
     overflow: hidden;
 }
 
+.working::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 10% 20%, rgba(196, 167, 125, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 90% 80%, rgba(61, 90, 69, 0.06) 0%, transparent 50%);
+    pointer-events: none;
+}
+
 .working-header {
     text-align: center;
     margin-bottom: var(--spacing-2xl);
+    position: relative;
+    z-index: 1;
 }
 
 .working-header .section-subtitle {
@@ -1150,7 +1219,8 @@ h3 {
 .workflow-item.active {
     border-color: var(--color-secondary);
     background: var(--color-white);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
 }
 
 .workflow-step-number {
@@ -1159,6 +1229,11 @@ h3 {
     font-weight: 600;
     color: var(--color-secondary);
     margin-bottom: var(--spacing-sm);
+    transition: all var(--transition);
+}
+
+.workflow-item.active .workflow-step-number {
+    transform: scale(1.1);
 }
 
 .workflow-icon {
@@ -1171,22 +1246,52 @@ h3 {
     align-items: center;
     justify-content: center;
     transition: all var(--transition);
+    position: relative;
+}
+
+.workflow-icon::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border: 2px solid transparent;
+    transition: all var(--transition);
+}
+
+.workflow-item:hover .workflow-icon::after,
+.workflow-item.active .workflow-icon::after {
+    border-color: var(--color-secondary);
 }
 
 .workflow-item:hover .workflow-icon,
 .workflow-item.active .workflow-icon {
     background: var(--color-primary);
     color: var(--color-bg);
+    transform: scale(1.05);
 }
 
 .workflow-icon svg {
     width: 32px;
     height: 32px;
+    transition: transform var(--transition);
+}
+
+.workflow-item.active .workflow-icon svg {
+    animation: iconPulse 1s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
 }
 
 .workflow-item h3 {
     margin-bottom: var(--spacing-xs);
     font-size: 1.125rem;
+    transition: color var(--transition);
+}
+
+.workflow-item.active h3 {
+    color: var(--color-secondary);
 }
 
 .workflow-item p {
@@ -1200,6 +1305,7 @@ h3 {
     align-items: center;
     padding-top: 60px;
     width: 40px;
+    position: relative;
 }
 
 .connector-line {
@@ -1207,6 +1313,23 @@ h3 {
     height: 2px;
     background: var(--color-border);
     position: relative;
+    overflow: hidden;
+}
+
+.connector-line::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--color-secondary), transparent);
+    animation: connectorFlow 2s ease-in-out infinite;
+}
+
+@keyframes connectorFlow {
+    0% { left: -100%; }
+    100% { left: 100%; }
 }
 
 .connector-dot {
@@ -1217,6 +1340,18 @@ h3 {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
+    animation: dotPulse 2s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+    0%, 100% { 
+        transform: translateX(-50%) scale(1);
+        box-shadow: 0 0 0 0 rgba(196, 167, 125, 0.4);
+    }
+    50% { 
+        transform: translateX(-50%) scale(1.2);
+        box-shadow: 0 0 0 8px rgba(196, 167, 125, 0);
+    }
 }
 
 /* Workflow Signal Animation */
@@ -1227,6 +1362,7 @@ h3 {
     right: 0;
     height: 3px;
     background: var(--color-bg-alt);
+    overflow: hidden;
 }
 
 .signal-pulse {
@@ -1240,13 +1376,8 @@ h3 {
 }
 
 @keyframes signal-move {
-    0% {
-        left: -150px;
-    }
-
-    100% {
-        left: 100%;
-    }
+    0% { left: -150px; }
+    100% { left: 100%; }
 }
 
 /* ===== Tech Stack Section ===== */
