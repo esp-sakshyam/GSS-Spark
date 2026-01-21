@@ -347,7 +347,7 @@ async function loadDevices() {
         const tbody = document.getElementById('devicesTable');
 
         if (!data.success || !data.data.devices || data.data.devices.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No devices found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No devices found</td></tr>';
             return;
         }
 
@@ -357,14 +357,6 @@ async function loadDevices() {
                 <td>${device.device_name || 'Device ' + device.DID}</td>
                 <td>${device.location_name || 'Location ' + device.LID}</td>
                 <td><span class="status-badge ${device.status}">${device.status}</span></td>
-                <td>
-                    <div class="battery-level">
-                        <div class="battery-bar">
-                            <div class="battery-fill ${getBatteryClass(device.battery_level)}" style="width: ${device.battery_level}%"></div>
-                        </div>
-                        <span class="battery-text">${device.battery_level}%</span>
-                    </div>
-                </td>
                 <td>${formatTime(device.last_ping)}</td>
                 <td>
                     <div class="action-btns">
@@ -414,27 +406,20 @@ function editDevice(id) {
                             ${locationOptions}
                         </select>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Status</label>
-                            <select id="editDeviceStatus" class="form-select">
-                                <option value="active" ${device.status === 'active' ? 'selected' : ''}>Active</option>
-                                <option value="inactive" ${device.status === 'inactive' ? 'selected' : ''}>Inactive</option>
-                                <option value="maintenance" ${device.status === 'maintenance' ? 'selected' : ''}>Maintenance</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Battery Level</label>
-                            <input type="number" id="editDeviceBattery" class="form-input" min="0" max="100" value="${device.battery_level}">
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select id="editDeviceStatus" class="form-select">
+                            <option value="active" ${device.status === 'active' ? 'selected' : ''}>Active</option>
+                            <option value="inactive" ${device.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                            <option value="maintenance" ${device.status === 'maintenance' ? 'selected' : ''}>Maintenance</option>
+                        </select>
                     </div>
                 `, async () => {
                     const updateData = {
                         DID: parseInt(document.getElementById('editDID').value),
                         device_name: document.getElementById('editDeviceName').value,
                         LID: parseInt(document.getElementById('editDeviceLocation').value),
-                        status: document.getElementById('editDeviceStatus').value,
-                        battery_level: parseInt(document.getElementById('editDeviceBattery').value)
+                        status: document.getElementById('editDeviceStatus').value
                     };
 
                     const res = await fetch(`${API_BASE}/Update/device.php`, {
@@ -492,26 +477,19 @@ document.getElementById('createDeviceBtn')?.addEventListener('click', () => {
                 ${locationOptions}
             </select>
         </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                <select id="newDeviceStatus" class="form-select">
-                    <option value="active" selected>Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="maintenance">Maintenance</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Battery Level</label>
-                <input type="number" id="newDeviceBattery" class="form-input" min="0" max="100" value="100">
-            </div>
+        <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="newDeviceStatus" class="form-select">
+                <option value="active" selected>Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="maintenance">Maintenance</option>
+            </select>
         </div>
     `, async () => {
         const newDevice = {
             device_name: document.getElementById('newDeviceName').value,
             LID: parseInt(document.getElementById('newDeviceLocation').value),
-            status: document.getElementById('newDeviceStatus').value,
-            battery_level: parseInt(document.getElementById('newDeviceBattery').value)
+            status: document.getElementById('newDeviceStatus').value
         };
 
         if (!newDevice.LID) {
