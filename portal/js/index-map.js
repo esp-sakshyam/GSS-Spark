@@ -293,10 +293,10 @@ async function saveMapping() {
 
         if (id) {
             data.LID = id;
-            await apiPut('indexes/update.php', data);
+            await apiPut('Update/index.php', data);
             showToast('Mapping updated successfully', 'success');
         } else {
-            await apiPost('indexes/create.php', data);
+            await apiPost('Create/index.php', data);
             showToast('Mapping created successfully', 'success');
         }
 
@@ -319,7 +319,7 @@ async function confirmDelete() {
         confirmDeleteBtn.disabled = true;
         confirmDeleteBtn.textContent = 'Deleting...';
 
-        await apiDelete(`indexes/delete.php?LID=${deleteTargetId}`);
+        await apiDelete(`Delete/index.php?LID=${deleteTargetId}`);
         showToast('Mapping deleted successfully', 'success');
 
         closeModal('deleteModal');

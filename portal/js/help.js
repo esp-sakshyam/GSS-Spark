@@ -247,10 +247,10 @@ async function saveHelp() {
 
         if (id) {
             data.HID = id;
-            await apiPut('helps/update.php', data);
+            await apiPut('Update/helps.php', data);
             showToast('Resource updated successfully', 'success');
         } else {
-            await apiPost('helps/create.php', data);
+            await apiPost('Create/helps.php', data);
             showToast('Resource created successfully', 'success');
         }
 
@@ -273,7 +273,7 @@ async function confirmDelete() {
         confirmDeleteBtn.disabled = true;
         confirmDeleteBtn.textContent = 'Deleting...';
 
-        await apiDelete(`helps/delete.php?HID=${deleteTargetId}`);
+        await apiDelete(`Delete/helps.php?HID=${deleteTargetId}`);
         showToast('Resource deleted successfully', 'success');
 
         closeModal('deleteModal');
@@ -295,7 +295,7 @@ async function confirmDispatch() {
     try {
         confirmDispatchBtn.disabled = true;
 
-        await apiPut('helps/update.php', {
+        await apiPut('Update/helps.php', {
             HID: dispatchTargetId,
             status: 'dispatched'
         });
@@ -315,7 +315,7 @@ async function confirmDispatch() {
 
 async function recallHelp(hid) {
     try {
-        await apiPut('helps/update.php', {
+        await apiPut('Update/helps.php', {
             HID: hid,
             status: 'available'
         });
