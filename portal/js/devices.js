@@ -85,10 +85,10 @@ async function loadData() {
             apiGet('Read/index.php')
         ]);
 
-        allDevices = devicesRes.data || [];
+        allDevices = devicesRes.data?.devices || [];
 
         // Get unique locations from indexes
-        const indexData = indexesRes.data || [];
+        const indexData = indexesRes.data?.indexes || [];
         locations = [...new Set(indexData.map(i => i.location).filter(Boolean))];
 
         populateFilters();
@@ -264,7 +264,7 @@ async function saveDevice() {
         if (location) {
             // We need to get the LID from indexes
             const indexesRes = await apiGet('Read/index.php');
-            const indexes = indexesRes.data || [];
+            const indexes = indexesRes.data?.indexes || [];
             const matchingIndex = indexes.find(i => i.location === location);
             lid = matchingIndex?.LID || null;
         }

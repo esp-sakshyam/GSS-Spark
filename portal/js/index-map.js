@@ -85,8 +85,8 @@ async function loadData() {
             apiGet('Read/helps.php')
         ]);
 
-        allIndexes = indexesRes.data || [];
-        allHelps = helpsRes.data || [];
+        allIndexes = indexesRes.data?.indexes || [];
+        allHelps = helpsRes.data?.helps || [];
 
         updateStats();
         populateFilters();

@@ -51,19 +51,25 @@ function initEventListeners() {
 async function loadDashboard() {
     try {
         // Load all data in parallel
-        const [messages, devices, helps, indexes] = await Promise.all([
+        const [messagesRes, devicesRes, helpsRes, indexesRes] = await Promise.all([
             apiGet('Read/message.php'),
             apiGet('Read/device.php'),
             apiGet('Read/helps.php'),
             apiGet('Read/index.php')
         ]);
 
+        // Extract data from nested response
+        const messages = messagesRes.data?.messages || [];
+        const devices = devicesRes.data?.devices || [];
+        const helps = helpsRes.data?.helps || [];
+        const indexes = indexesRes.data?.indexes || [];
+
         // Update stats
         updateStats(messages, devices, helps, indexes);
 
         // Update tables
-        updateRecentMessages(messages.data || []);
-        updateDeviceList(devices.data || []);
+        updateRecentMessages(messages);
+        updateDeviceList(devices);
 
     } catch (error) {
         console.error('Dashboard load error:', error);
@@ -74,22 +80,19 @@ async function loadDashboard() {
 // ===== Update Stats =====
 function updateStats(messages, devices, helps, indexes) {
     // Messages count
-    const messageCount = messages.data?.length || 0;
+    const messageCount = messages.length || 0;
     animateValue(statMessages, messageCount);
 
     // Devices count (active)
-    const deviceData = devices.data || [];
-    const activeDevices = deviceData.filter(d => d.status === 'active').length;
-    animateValue(statDevices, `${activeDevices}/${deviceData.length}`);
+    const activeDevices = devices.filter(d => d.status === 'active').length;
+    animateValue(statDevices, `${activeDevices}/${devices.length}`);
 
     // Helps count (available)
-    const helpData = helps.data || [];
-    const availableHelps = helpData.filter(h => h.status === 'available').length;
-    animateValue(statHelps, `${availableHelps}/${helpData.length}`);
+    const availableHelps = helps.filter(h => h.status === 'available').length;
+    animateValue(statHelps, `${availableHelps}/${helps.length}`);
 
     // Locations count
-    const indexData = indexes.data || [];
-    const locations = new Set(indexData.map(i => i.location)).size;
+    const locations = new Set(indexes.map(i => i.location)).size;
     animateValue(statLocations, locations);
 }
 

@@ -87,9 +87,9 @@ async function loadData() {
             apiGet('Read/index.php')
         ]);
 
-        allMessages = messagesRes.data || [];
-        devices = devicesRes.data || [];
-        indexes = indexesRes.data || [];
+        allMessages = messagesRes.data?.messages || [];
+        devices = devicesRes.data?.devices || [];
+        indexes = indexesRes.data?.indexes || [];
 
         populateFilters();
         applyFilters();
