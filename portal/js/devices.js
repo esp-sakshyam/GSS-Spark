@@ -92,9 +92,15 @@ async function loadData() {
 
         allDevices = devicesRes.data?.devices || [];
 
-        // Get unique locations from indexes
+        // Get locations from the location index mapping
         const indexData = indexesRes.data?.indexes || [];
-        locations = [...new Set(indexData.map(i => i.location).filter(Boolean))];
+        const locationIndex = indexData.find(i => i.type === 'location');
+        if (locationIndex && locationIndex.mapping) {
+            // Convert mapping object to array of {code, name} for dropdowns
+            locations = Object.entries(locationIndex.mapping).map(([code, name]) => ({ code, name }));
+        } else {
+            locations = [];
+        }
 
         populateFilters();
         updateStatusCounts();
@@ -112,7 +118,7 @@ function populateFilters() {
     // Location filter
     if (filterLocation) {
         const locationOptions = locations.map(l =>
-            `<option value="${l}">${l}</option>`
+            `<option value="${l.code}">${l.name}</option>`
         ).join('');
         filterLocation.innerHTML = `<option value="">All Locations</option>${locationOptions}`;
     }
@@ -120,7 +126,7 @@ function populateFilters() {
     // Location select in modal
     if (deviceLocation) {
         const locationOptions = locations.map(l =>
-            `<option value="${l}">${l}</option>`
+            `<option value="${l.code}">${l.name}</option>`
         ).join('');
         deviceLocation.innerHTML = `<option value="">Select location...</option>${locationOptions}`;
     }
@@ -145,7 +151,7 @@ function applyFilters() {
 
     filteredDevices = allDevices.filter(device => {
         if (statusFilter && device.status !== statusFilter) return false;
-        if (locationFilter && device.location_name !== locationFilter) return false;
+        if (locationFilter && String(device.LID) !== locationFilter) return false;
         return true;
     });
 
