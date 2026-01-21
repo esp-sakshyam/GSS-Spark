@@ -516,11 +516,9 @@ document.getElementById('createDeviceBtn')?.addEventListener('click', () => {
 /* ===== Helps CRUD ===== */
 async function loadHelps() {
     const status = document.getElementById('helpStatusFilter')?.value || '';
-    const type = document.getElementById('helpTypeFilter')?.value || '';
 
     let url = `${API_BASE}/Read/helps.php?`;
-    if (status) url += `status=${status}&`;
-    if (type) url += `type=${type}`;
+    if (status) url += `status=${status}`;
 
     try {
         const res = await fetch(url);
@@ -529,7 +527,7 @@ async function loadHelps() {
         const tbody = document.getElementById('helpsTable');
 
         if (!data.success || !data.data.helps || data.data.helps.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No help resources found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No help resources found</td></tr>';
             return;
         }
 
@@ -537,7 +535,6 @@ async function loadHelps() {
             <tr data-id="${help.HID}">
                 <td>${help.HID}</td>
                 <td>${help.name}</td>
-                <td><span class="status-badge">${help.type}</span></td>
                 <td>${help.contact}</td>
                 <td>${help.location || 'N/A'}</td>
                 <td>${help.eta || 'N/A'}</td>
@@ -579,24 +576,13 @@ function editHelp(id) {
                         <label class="form-label">Name *</label>
                         <input type="text" id="editHelpName" class="form-input" value="${help.name}" required>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Type</label>
-                            <select id="editHelpType" class="form-select">
-                                <option value="rescue" ${help.type === 'rescue' ? 'selected' : ''}>Rescue</option>
-                                <option value="medical" ${help.type === 'medical' ? 'selected' : ''}>Medical</option>
-                                <option value="supplies" ${help.type === 'supplies' ? 'selected' : ''}>Supplies</option>
-                                <option value="general" ${help.type === 'general' ? 'selected' : ''}>General</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Status</label>
-                            <select id="editHelpStatus" class="form-select">
-                                <option value="available" ${help.status === 'available' ? 'selected' : ''}>Available</option>
-                                <option value="dispatched" ${help.status === 'dispatched' ? 'selected' : ''}>Dispatched</option>
-                                <option value="busy" ${help.status === 'busy' ? 'selected' : ''}>Busy</option>
-                            </select>
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select id="editHelpStatus" class="form-select">
+                            <option value="available" ${help.status === 'available' ? 'selected' : ''}>Available</option>
+                            <option value="dispatched" ${help.status === 'dispatched' ? 'selected' : ''}>Dispatched</option>
+                            <option value="busy" ${help.status === 'busy' ? 'selected' : ''}>Busy</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Contact *</label>
@@ -616,28 +602,31 @@ function editHelp(id) {
                     const updateData = {
                         HID: parseInt(document.getElementById('editHID').value),
                         name: document.getElementById('editHelpName').value,
-                        type: document.getElementById('editHelpType').value,
                         status: document.getElementById('editHelpStatus').value,
                         contact: document.getElementById('editHelpContact').value,
                         location: document.getElementById('editHelpLocation').value,
                         eta: document.getElementById('editHelpETA').value
                     };
+                    contact: document.getElementById('editHelpContact').value,
+                        location: document.getElementById('editHelpLocation').value,
+                            eta: document.getElementById('editHelpETA').value
+                };
 
-                    const res = await fetch(`${API_BASE}/Update/helps.php`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updateData)
-                    });
-                    const result = await res.json();
-
-                    if (result.success) {
-                        showToast('Help resource updated successfully', 'success');
-                        loadHelps();
-                    } else {
-                        showToast(result.message || 'Update failed', 'error');
-                    }
+                const res = await fetch(`${API_BASE}/Update/helps.php`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updateData)
                 });
-            }
+                const result = await res.json();
+
+                if (result.success) {
+                    showToast('Help resource updated successfully', 'success');
+                    loadHelps();
+                } else {
+                    showToast(result.message || 'Update failed', 'error');
+                }
+            });
+}
         });
 }
 
@@ -666,24 +655,13 @@ document.getElementById('createHelpBtn')?.addEventListener('click', () => {
             <label class="form-label">Name *</label>
             <input type="text" id="newHelpName" class="form-input" placeholder="e.g., Mountain Rescue Team" required>
         </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Type</label>
-                <select id="newHelpType" class="form-select">
-                    <option value="rescue">Rescue</option>
-                    <option value="medical">Medical</option>
-                    <option value="supplies">Supplies</option>
-                    <option value="general" selected>General</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Status</label>
-                <select id="newHelpStatus" class="form-select">
-                    <option value="available" selected>Available</option>
-                    <option value="dispatched">Dispatched</option>
-                    <option value="busy">Busy</option>
-                </select>
-            </div>
+        <div class="form-group">
+            <label class="form-label">Status</label>
+            <select id="newHelpStatus" class="form-select">
+                <option value="available" selected>Available</option>
+                <option value="dispatched">Dispatched</option>
+                <option value="busy">Busy</option>
+            </select>
         </div>
         <div class="form-group">
             <label class="form-label">Contact *</label>
@@ -702,7 +680,6 @@ document.getElementById('createHelpBtn')?.addEventListener('click', () => {
     `, async () => {
         const newHelp = {
             name: document.getElementById('newHelpName').value,
-            type: document.getElementById('newHelpType').value,
             status: document.getElementById('newHelpStatus').value,
             contact: document.getElementById('newHelpContact').value,
             location: document.getElementById('newHelpLocation').value,
@@ -965,7 +942,6 @@ function initFilters() {
 
     // Help filters
     document.getElementById('helpStatusFilter')?.addEventListener('change', loadHelps);
-    document.getElementById('helpTypeFilter')?.addEventListener('change', loadHelps);
 
     // Index filters
     document.getElementById('indexTypeFilter')?.addEventListener('change', loadIndexes);
@@ -1012,12 +988,6 @@ function formatTime(timestamp) {
 function truncate(str, maxLength) {
     if (!str) return '';
     return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
-}
-
-function getBatteryClass(level) {
-    if (level > 50) return 'high';
-    if (level > 20) return 'medium';
-    return 'low';
 }
 
 async function loadDevicesForSelect() {
