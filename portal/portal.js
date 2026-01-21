@@ -767,27 +767,27 @@ async function loadIndexes() {
                 </div>
                 <div class="index-card-body">
                     ${Object.entries(index.mapping).map(([code, value]) => {
-                        let displayCode = code;
-                        let displayValue = value;
-                        let escapedValue = '';
-                        
-                        if (index.type === 'help') {
-                            // For help mapping: code is HID, value is array of message codes
-                            displayCode = helpsData[code] || `Help #${code}`;
-                            if (Array.isArray(value)) {
-                                displayValue = value.map(msgCode => 
-                                    indexMappings.message?.[msgCode] || `Code ${msgCode}`
-                                ).join(', ');
-                                escapedValue = value.join(','); // Store as comma-separated IDs
-                            } else {
-                                escapedValue = String(value);
-                            }
-                        } else {
-                            displayValue = Array.isArray(value) ? value.join(', ') : value;
-                            escapedValue = String(displayValue).replace(/'/g, "\\'");
-                        }
-                        
-                        return `
+            let displayCode = code;
+            let displayValue = value;
+            let escapedValue = '';
+
+            if (index.type === 'help') {
+                // For help mapping: code is HID, value is array of message codes
+                displayCode = helpsData[code] || `Help #${code}`;
+                if (Array.isArray(value)) {
+                    displayValue = value.map(msgCode =>
+                        indexMappings.message?.[msgCode] || `Code ${msgCode}`
+                    ).join(', ');
+                    escapedValue = value.join(','); // Store as comma-separated IDs
+                } else {
+                    escapedValue = String(value);
+                }
+            } else {
+                displayValue = Array.isArray(value) ? value.join(', ') : value;
+                escapedValue = String(displayValue).replace(/'/g, "\\'");
+            }
+
+            return `
                         <div class="mapping-item">
                             <span class="mapping-code">${displayCode}</span>
                             <span class="mapping-value">${displayValue}</span>
@@ -814,18 +814,18 @@ async function loadIndexes() {
 function editIndex(type) {
     if (type === 'help') {
         // For help mapping, show help resource select and message code checkboxes
-        const helpOptions = Object.entries(helpsData).map(([hid, name]) => 
+        const helpOptions = Object.entries(helpsData).map(([hid, name]) =>
             `<option value="${hid}">${name}</option>`
         ).join('');
-        
-        const messageCheckboxes = indexMappings.message ? 
+
+        const messageCheckboxes = indexMappings.message ?
             Object.entries(indexMappings.message).map(([code, desc]) => `
                 <label class="checkbox-item">
                     <input type="checkbox" name="messageCodes" value="${code}">
                     <span>${desc}</span>
                 </label>
             `).join('') : '';
-        
+
         showModal(`Add Help Resource Mapping`, `
             <div class="form-group">
                 <label class="form-label">Help Resource *</label>
@@ -844,7 +844,7 @@ function editIndex(type) {
             const hid = document.getElementById('newHelpResource').value;
             const checkedBoxes = document.querySelectorAll('input[name="messageCodes"]:checked');
             const messageCodes = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
-            
+
             if (!hid) {
                 showToast('Please select a help resource', 'error');
                 return;
@@ -853,7 +853,7 @@ function editIndex(type) {
                 showToast('Please select at least one message type', 'error');
                 return;
             }
-            
+
             const res = await fetch(`${API_BASE}/Update/index.php`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -863,7 +863,7 @@ function editIndex(type) {
                 })
             });
             const result = await res.json();
-            
+
             if (result.success) {
                 showToast('Help mapping added successfully', 'success');
                 loadIndexes();
@@ -920,15 +920,15 @@ function editMappingEntry(type, code, currentValue) {
         // For help mapping, show message code checkboxes
         const currentCodes = currentValue.split(',').map(c => parseInt(c.trim()));
         const helpName = helpsData[code] || `Help #${code}`;
-        
-        const messageCheckboxes = indexMappings.message ? 
+
+        const messageCheckboxes = indexMappings.message ?
             Object.entries(indexMappings.message).map(([msgCode, desc]) => `
                 <label class="checkbox-item">
                     <input type="checkbox" name="messageCodes" value="${msgCode}" ${currentCodes.includes(parseInt(msgCode)) ? 'checked' : ''}>
                     <span>${desc}</span>
                 </label>
             `).join('') : '';
-        
+
         showModal(`Edit Help Mapping: ${helpName}`, `
             <div class="form-group">
                 <label class="form-label">Help Resource</label>
@@ -943,12 +943,12 @@ function editMappingEntry(type, code, currentValue) {
         `, async () => {
             const checkedBoxes = document.querySelectorAll('input[name="messageCodes"]:checked');
             const messageCodes = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
-            
+
             if (messageCodes.length === 0) {
                 showToast('Please select at least one message type', 'error');
                 return;
             }
-            
+
             const res = await fetch(`${API_BASE}/Update/index.php`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -958,7 +958,7 @@ function editMappingEntry(type, code, currentValue) {
                 })
             });
             const result = await res.json();
-            
+
             if (result.success) {
                 showToast('Help mapping updated successfully', 'success');
                 loadIndexes();
