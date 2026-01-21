@@ -1,15 +1,18 @@
 /* ===== LifeLine Portal - Dashboard JavaScript ===== */
 
-// Destructure utilities from shared
-const {
-    apiGet,
-    formatTime,
-    truncate,
-    showToast,
-    setTableLoading,
-    setTableEmpty,
-    getIcon
-} = window.LifeLine;
+// Wait for LifeLine to be available
+if (!window.LifeLine) {
+    console.error('LifeLine not loaded. Make sure shared.js is included before this file.');
+}
+
+const LL = window.LifeLine || {};
+const apiGet = LL.apiGet;
+const formatTime = LL.formatTime;
+const truncate = LL.truncate;
+const showToast = LL.showToast;
+const setTableLoading = LL.setTableLoading;
+const setTableEmpty = LL.setTableEmpty;
+const getIcon = LL.getIcon;
 
 // ===== DOM Elements =====
 let statMessages, statDevices, statHelps, statLocations;

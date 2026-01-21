@@ -1,19 +1,24 @@
 /* ===== LifeLine Portal - Messages JavaScript ===== */
 
-const {
-    apiGet,
-    formatTime,
-    formatDateReadable,
-    truncate,
-    showToast,
-    setTableLoading,
-    setTableEmpty,
-    openModal,
-    closeModal,
-    initModalClose,
-    getIcon,
-    debounce
-} = window.LifeLine;
+// Wait for LifeLine to be available
+if (!window.LifeLine) {
+    console.error('LifeLine not loaded. Make sure shared.js is included before this file.');
+}
+
+const LL = window.LifeLine || {};
+const apiGet = LL.apiGet;
+const apiDelete = LL.apiDelete;
+const formatTime = LL.formatTime;
+const formatDateReadable = LL.formatDateReadable;
+const truncate = LL.truncate;
+const showToast = LL.showToast;
+const setTableLoading = LL.setTableLoading;
+const setTableEmpty = LL.setTableEmpty;
+const openModal = LL.openModal;
+const closeModal = LL.closeModal;
+const initModalClose = LL.initModalClose;
+const getIcon = LL.getIcon;
+const debounce = LL.debounce;
 
 // ===== State =====
 let allMessages = [];
@@ -389,9 +394,6 @@ async function deleteMessage(mid) {
         showToast('Failed to delete message', 'error');
     }
 }
-
-// Import apiDelete
-const { apiDelete } = window.LifeLine;
 
 // Add spin animation
 const style = document.createElement('style');

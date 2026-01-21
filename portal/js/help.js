@@ -1,18 +1,22 @@
 /* ===== LifeLine Portal - Help Resources JavaScript ===== */
 
-const {
-    apiGet,
-    apiPost,
-    apiPut,
-    apiDelete,
-    formatTime,
-    showToast,
-    openModal,
-    closeModal,
-    initModalClose,
-    getIcon,
-    debounce
-} = window.LifeLine;
+// Wait for LifeLine to be available
+if (!window.LifeLine) {
+    console.error('LifeLine not loaded. Make sure shared.js is included before this file.');
+}
+
+const LL = window.LifeLine || {};
+const apiGet = LL.apiGet;
+const apiPost = LL.apiPost;
+const apiPut = LL.apiPut;
+const apiDelete = LL.apiDelete;
+const formatTime = LL.formatTime;
+const showToast = LL.showToast;
+const openModal = LL.openModal;
+const closeModal = LL.closeModal;
+const initModalClose = LL.initModalClose;
+const getIcon = LL.getIcon;
+const debounce = LL.debounce;
 
 // ===== State =====
 let allHelps = [];
