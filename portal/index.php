@@ -64,7 +64,6 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                     <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                 </svg>
                 <span>Messages</span>
-                <span class="badge" id="pendingBadge">0</span>
             </a>
             <a href="#devices" class="nav-item" data-section="devices">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -138,29 +137,14 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
         <section class="content-section active" id="dashboardSection">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-icon critical">
+                    <div class="stat-icon messages">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path
-                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                            <line x1="12" y1="9" x2="12" y2="13" />
-                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                         </svg>
                     </div>
                     <div class="stat-content">
-                        <span class="stat-value" id="statCritical">0</span>
-                        <span class="stat-label">Critical Alerts</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon pending">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10" />
-                            <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                    </div>
-                    <div class="stat-content">
-                        <span class="stat-value" id="statPending">0</span>
-                        <span class="stat-label">Pending Messages</span>
+                        <span class="stat-value" id="statMessages">0</span>
+                        <span class="stat-label">Total Messages</span>
                     </div>
                 </div>
                 <div class="stat-card">
@@ -185,6 +169,18 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                     <div class="stat-content">
                         <span class="stat-value" id="statHelps">0</span>
                         <span class="stat-label">Available Resources</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon locations">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                        </svg>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-value" id="statLocations">0</span>
+                        <span class="stat-label">Locations Covered</span>
                     </div>
                 </div>
             </div>

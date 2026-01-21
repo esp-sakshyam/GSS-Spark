@@ -103,21 +103,21 @@ async function refreshCurrentSection() {
 /* ===== Dashboard ===== */
 async function loadDashboard() {
     try {
-        const [messagesRes, devicesRes, helpsRes] = await Promise.all([
+        const [messagesRes, devicesRes, helpsRes, indexesRes] = await Promise.all([
             fetch(`${API_BASE}/Read/message.php`),
             fetch(`${API_BASE}/Read/device.php`),
-            fetch(`${API_BASE}/Read/helps.php?status=available`)
+            fetch(`${API_BASE}/Read/helps.php?status=available`),
+            fetch(`${API_BASE}/Read/index.php?type=location`)
         ]);
 
         const messages = await messagesRes.json();
         const devices = await devicesRes.json();
         const helps = await helpsRes.json();
+        const indexes = await indexesRes.json();
 
         // Update stats
-        if (messages.success && messages.data.stats) {
-            document.getElementById('statCritical').textContent = messages.data.stats.critical_active || 0;
-            document.getElementById('statPending').textContent = messages.data.stats.pending || 0;
-            document.getElementById('pendingBadge').textContent = messages.data.stats.pending || '';
+        if (messages.success) {
+            document.getElementById('statMessages').textContent = messages.data.total || 0;
         }
 
         if (devices.success && devices.data.devices) {
@@ -129,20 +129,23 @@ async function loadDashboard() {
             document.getElementById('statHelps').textContent = helps.data.helps.length;
         }
 
+        if (indexes.success && indexes.data.mapping) {
+            document.getElementById('statLocations').textContent = Object.keys(indexes.data.mapping).length;
+        }
+
         // Populate recent messages table
         if (messages.success && messages.data.messages) {
             const tbody = document.getElementById('recentMessagesTable');
             const recentMessages = messages.data.messages.slice(0, 5);
 
             if (recentMessages.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No messages yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No messages yet</td></tr>';
             } else {
                 tbody.innerHTML = recentMessages.map(msg => `
                     <tr>
-                        <td><span class="priority-badge ${msg.priority}">${msg.priority}</span></td>
                         <td>${msg.location_name || 'Unknown'}</td>
                         <td>${truncate(msg.message_text || 'Code: ' + msg.message_code, 30)}</td>
-                        <td><span class="status-badge ${msg.status}">${msg.status}</span></td>
+                        <td>${msg.device_name || 'Device ' + msg.DID}</td>
                         <td>${formatTime(msg.timestamp)}</td>
                     </tr>
                 `).join('');
@@ -159,7 +162,7 @@ async function loadDashboard() {
                         <div class="device-name">${device.device_name || 'Device ' + device.DID}</div>
                         <div class="device-location">${device.location_name || 'Location ' + device.LID}</div>
                     </div>
-                    <div class="device-battery">${device.battery_level}%</div>
+                    <div class="device-status-text">${device.status}</div>
                 </div>
             `).join('');
         }
@@ -172,12 +175,10 @@ async function loadDashboard() {
 
 /* ===== Messages CRUD ===== */
 async function loadMessages() {
-    const status = document.getElementById('messageStatusFilter')?.value || '';
-    const priority = document.getElementById('messagePriorityFilter')?.value || '';
+    const messageCode = document.getElementById('messageCodeFilter')?.value || '';
 
     let url = `${API_BASE}/Read/message.php?`;
-    if (status) url += `status=${status}&`;
-    if (priority) url += `priority=${priority}&`;
+    if (messageCode) url += `message_code=${messageCode}&`;
 
     try {
         const res = await fetch(url);
@@ -186,18 +187,17 @@ async function loadMessages() {
         const tbody = document.getElementById('messagesTable');
 
         if (!data.success || !data.data.messages || data.data.messages.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No messages found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No messages found</td></tr>';
             return;
         }
 
         tbody.innerHTML = data.data.messages.map(msg => `
             <tr data-id="${msg.MID}">
                 <td>${msg.MID}</td>
-                <td><span class="priority-badge ${msg.priority}">${msg.priority}</span></td>
                 <td>${msg.device_name || 'Device ' + msg.DID}</td>
                 <td>${msg.location_name || 'Unknown'}</td>
                 <td title="${msg.message_text}">${truncate(msg.message_text || 'Code: ' + msg.message_code, 25)}</td>
-                <td><span class="status-badge ${msg.status}">${msg.status}</span></td>
+                <td>${msg.RSSI || 'N/A'} dBm</td>
                 <td>${formatTime(msg.timestamp)}</td>
                 <td>
                     <div class="action-btns">
@@ -205,12 +205,6 @@ async function loadMessages() {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                                 <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                        </button>
-                        <button class="action-btn edit" onclick="editMessage(${msg.MID})" title="Edit">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                             </svg>
                         </button>
                         <button class="action-btn delete" onclick="deleteMessage(${msg.MID})" title="Delete">
@@ -241,16 +235,6 @@ function viewMessage(id) {
                         <label class="form-label">Message ID</label>
                         <p>${msg.MID}</p>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Priority</label>
-                            <p><span class="priority-badge ${msg.priority}">${msg.priority}</span></p>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Status</label>
-                            <p><span class="status-badge ${msg.status}">${msg.status}</span></p>
-                        </div>
-                    </div>
                     <div class="form-group">
                         <label class="form-label">Device</label>
                         <p>${msg.device_name || 'Device ' + msg.DID} (${msg.location_name || 'Unknown Location'})</p>
@@ -264,10 +248,6 @@ function viewMessage(id) {
                         <p>${msg.RSSI || 'N/A'} dBm</p>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Notes</label>
-                        <p>${msg.notes || 'No notes'}</p>
-                    </div>
-                    <div class="form-group">
                         <label class="form-label">Timestamp</label>
                         <p>${msg.timestamp}</p>
                     </div>
@@ -276,63 +256,7 @@ function viewMessage(id) {
         });
 }
 
-function editMessage(id) {
-    fetch(`${API_BASE}/Read/message.php?id=${id}`)
-        .then(res => res.json())
-        .then(data => {
-            if (data.success && data.data) {
-                const msg = data.data;
-                showModal('Update Message', `
-                    <input type="hidden" id="editMID" value="${msg.MID}">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Priority</label>
-                            <select id="editPriority" class="form-select">
-                                <option value="low" ${msg.priority === 'low' ? 'selected' : ''}>Low</option>
-                                <option value="medium" ${msg.priority === 'medium' ? 'selected' : ''}>Medium</option>
-                                <option value="high" ${msg.priority === 'high' ? 'selected' : ''}>High</option>
-                                <option value="critical" ${msg.priority === 'critical' ? 'selected' : ''}>Critical</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Status</label>
-                            <select id="editStatus" class="form-select">
-                                <option value="pending" ${msg.status === 'pending' ? 'selected' : ''}>Pending</option>
-                                <option value="acknowledged" ${msg.status === 'acknowledged' ? 'selected' : ''}>Acknowledged</option>
-                                <option value="escalated" ${msg.status === 'escalated' ? 'selected' : ''}>Escalated</option>
-                                <option value="resolved" ${msg.status === 'resolved' ? 'selected' : ''}>Resolved</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Notes</label>
-                        <textarea id="editNotes" class="form-textarea">${msg.notes || ''}</textarea>
-                    </div>
-                `, async () => {
-                    const updateData = {
-                        MID: parseInt(document.getElementById('editMID').value),
-                        priority: document.getElementById('editPriority').value,
-                        status: document.getElementById('editStatus').value,
-                        notes: document.getElementById('editNotes').value
-                    };
-
-                    const res = await fetch(`${API_BASE}/Update/message.php`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updateData)
-                    });
-                    const result = await res.json();
-
-                    if (result.success) {
-                        showToast('Message updated successfully', 'success');
-                        loadMessages();
-                    } else {
-                        showToast(result.message || 'Update failed', 'error');
-                    }
-                });
-            }
-        });
-}
+// Messages are now read-only (no priority/status/notes to edit)
 
 async function deleteMessage(id) {
     if (!confirm('Are you sure you want to delete this message?')) return;
@@ -375,32 +299,15 @@ document.getElementById('createMessageBtn')?.addEventListener('click', () => {
                     ${messageOptions}
                 </select>
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Priority</label>
-                    <select id="newMsgPriority" class="form-select">
-                        <option value="low">Low</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="high">High</option>
-                        <option value="critical">Critical</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">RSSI (dBm)</label>
-                    <input type="number" id="newMsgRSSI" class="form-input" placeholder="-70">
-                </div>
-            </div>
             <div class="form-group">
-                <label class="form-label">Notes</label>
-                <textarea id="newMsgNotes" class="form-textarea" placeholder="Additional information..."></textarea>
+                <label class="form-label">RSSI (dBm)</label>
+                <input type="number" id="newMsgRSSI" class="form-input" placeholder="-70">
             </div>
         `, async () => {
             const newMessage = {
                 DID: parseInt(document.getElementById('newMsgDevice').value),
                 message_code: parseInt(document.getElementById('newMsgCode').value),
-                priority: document.getElementById('newMsgPriority').value,
-                RSSI: document.getElementById('newMsgRSSI').value ? parseInt(document.getElementById('newMsgRSSI').value) : null,
-                notes: document.getElementById('newMsgNotes').value
+                RSSI: document.getElementById('newMsgRSSI').value ? parseInt(document.getElementById('newMsgRSSI').value) : null
             };
 
             if (!newMessage.DID || !newMessage.message_code) {
