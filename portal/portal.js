@@ -607,26 +607,22 @@ function editHelp(id) {
                         location: document.getElementById('editHelpLocation').value,
                         eta: document.getElementById('editHelpETA').value
                     };
-                    contact: document.getElementById('editHelpContact').value,
-                        location: document.getElementById('editHelpLocation').value,
-                            eta: document.getElementById('editHelpETA').value
-                };
 
-                const res = await fetch(`${API_BASE}/Update/helps.php`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updateData)
+                    const res = await fetch(`${API_BASE}/Update/helps.php`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updateData)
+                    });
+                    const result = await res.json();
+
+                    if (result.success) {
+                        showToast('Help resource updated successfully', 'success');
+                        loadHelps();
+                    } else {
+                        showToast(result.message || 'Update failed', 'error');
+                    }
                 });
-                const result = await res.json();
-
-                if (result.success) {
-                    showToast('Help resource updated successfully', 'success');
-                    loadHelps();
-                } else {
-                    showToast(result.message || 'Update failed', 'error');
-                }
-            });
-}
+            }
         });
 }
 
