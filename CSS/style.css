@@ -353,97 +353,198 @@ h3 {
 /* Hero Visual */
 .hero-visual {
     position: relative;
-}
-
-.illustration-container {
-    position: relative;
-    background: var(--color-bg-alt);
-    border: 1px solid var(--color-border);
-    padding: var(--spacing-md);
-}
-
-.illustration-svg {
     width: 100%;
-    height: auto;
 }
 
-/* Status Cards */
-.status-card {
-    position: absolute;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    background: var(--color-white);
-    border: 1px solid var(--color-border);
-    padding: 0.75rem 1rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    animation: float 3s ease-in-out infinite;
-}
-
-.card-signal {
-    top: 10%;
-    right: -20px;
-    animation-delay: 0s;
-}
-
-.card-alert {
-    bottom: 15%;
-    left: -20px;
-    animation-delay: 1.5s;
-}
-
-@keyframes float {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-8px);
-    }
-}
-
-.status-icon {
-    width: 36px;
-    height: 36px;
+/* Flow Diagram - Simple Illustration */
+.flow-diagram {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-lg);
     background: var(--color-bg-alt);
-    color: var(--color-accent);
+    border: 1px solid var(--color-border);
+    flex-wrap: wrap;
 }
 
-.status-icon.alert {
-    background: rgba(139, 58, 47, 0.1);
-    color: var(--color-alert);
-}
-
-.status-icon svg {
-    width: 20px;
-    height: 20px;
-}
-
-.status-info {
+.flow-node {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--spacing-md);
+    background: var(--color-white);
+    border: 2px solid var(--color-border);
+    min-width: 100px;
+    position: relative;
+    transition: all var(--transition);
 }
 
-.status-label {
-    font-size: 0.6875rem;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+.flow-node:hover {
+    border-color: var(--color-secondary);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
-.status-value {
+.node-sos {
+    border-color: var(--color-alert);
+}
+
+.node-gateway {
+    border-color: var(--color-accent);
+}
+
+.node-rescue {
+    border-color: var(--color-secondary);
+    background: var(--color-primary);
+}
+
+.node-rescue .node-label,
+.node-rescue .node-desc {
+    color: var(--color-bg);
+}
+
+.node-rescue .node-icon {
+    color: var(--color-bg);
+}
+
+.node-icon {
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--spacing-xs);
+    color: var(--color-primary);
+}
+
+.node-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.node-label {
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--color-accent);
+    color: var(--color-primary);
+    margin-bottom: 2px;
 }
 
-.status-value.alert-active {
-    color: var(--color-alert);
+.node-desc {
+    font-size: 0.6875rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+}
+
+/* Signal Waves Animation */
+.signal-waves {
+    position: absolute;
+    top: 50%;
+    right: -20px;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 3px;
+}
+
+.signal-waves span {
+    width: 3px;
+    height: 12px;
+    background: var(--color-alert);
+    animation: wave 1s ease-in-out infinite;
+}
+
+.signal-waves span:nth-child(1) {
+    animation-delay: 0s;
+    height: 8px;
+}
+
+.signal-waves span:nth-child(2) {
+    animation-delay: 0.1s;
+    height: 14px;
+}
+
+.signal-waves span:nth-child(3) {
+    animation-delay: 0.2s;
+    height: 10px;
+}
+
+@keyframes wave {
+
+    0%,
+    100% {
+        opacity: 0.3;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Flow Arrow */
+.flow-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--color-secondary);
+    padding: 0 var(--spacing-xs);
+}
+
+.flow-arrow svg {
+    width: 40px;
+    height: 16px;
+}
+
+.arrow-label {
+    font-size: 0.625rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+/* Blink & Pulse Animations */
+.blink {
+    animation: blink 1.5s ease-in-out infinite;
+}
+
+.pulse {
+    animation: pulse-light 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-light {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* Hero Features */
+.hero-features {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 0.5rem 1rem;
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+}
+
+.feature-icon {
+    font-size: 1rem;
 }
 
 /* Scroll Indicator */
@@ -1062,11 +1163,26 @@ h3 {
     }
 
     .hero-visual {
-        max-width: 600px;
+        max-width: 100%;
         margin: 0 auto;
     }
 
-    .status-card {
+    .flow-diagram {
+        gap: var(--spacing-sm);
+        padding: var(--spacing-md);
+    }
+
+    .flow-node {
+        min-width: 85px;
+        padding: var(--spacing-sm);
+    }
+
+    .node-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .signal-waves {
         display: none;
     }
 
@@ -1096,15 +1212,56 @@ h3 {
 
 @media (max-width: 768px) {
     .nav-links {
-        display: none;
+        position: fixed;
+        top: 70px;
+        left: 0;
+        right: 0;
+        background: rgba(245, 243, 239, 0.98);
+        backdrop-filter: blur(10px);
+        flex-direction: column;
+        padding: var(--spacing-md);
+        gap: 0;
+        border-bottom: 1px solid var(--color-border);
+        transform: translateY(-100%);
+        opacity: 0;
+        visibility: hidden;
+        transition: all var(--transition);
+    }
+
+    .nav-links.active {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .nav-links a {
+        padding: var(--spacing-sm) 0;
+        border-bottom: 1px solid var(--color-border);
+        display: block;
+    }
+
+    .nav-links a:last-child {
+        border-bottom: none;
     }
 
     .nav-mobile-toggle {
         display: flex;
     }
 
+    .nav-mobile-toggle.active span:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+    }
+
+    .nav-mobile-toggle.active span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .nav-mobile-toggle.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(5px, -5px);
+    }
+
     h1 {
-        font-size: 2rem;
+        font-size: 1.75rem;
     }
 
     .hero-stats {
@@ -1116,6 +1273,48 @@ h3 {
     .stat-divider {
         width: 40px;
         height: 1px;
+    }
+
+    /* Flow diagram mobile layout */
+    .flow-diagram {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm);
+    }
+
+    .flow-node {
+        width: 100%;
+        max-width: 200px;
+        flex-direction: row;
+        gap: var(--spacing-sm);
+        text-align: left;
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .node-icon {
+        width: 36px;
+        height: 36px;
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    .flow-arrow {
+        transform: rotate(90deg);
+        padding: var(--spacing-xs) 0;
+    }
+
+    .arrow-label {
+        transform: rotate(-90deg);
+        font-size: 0.5625rem;
+    }
+
+    .hero-features {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+
+    .feature-item {
+        justify-content: center;
     }
 
     .workflow {
@@ -1161,6 +1360,23 @@ h3 {
         padding: var(--spacing-xl) var(--spacing-sm);
     }
 
+    .hero-container {
+        padding: var(--spacing-lg) var(--spacing-sm);
+    }
+
+    .hero-badge {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+
     .hero-actions {
         flex-direction: column;
         width: 100%;
@@ -1169,10 +1385,49 @@ h3 {
     .btn {
         width: 100%;
         justify-content: center;
+        padding: 0.75rem 1rem;
+    }
+
+    .stat-number {
+        font-size: 1.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.6875rem;
+    }
+
+    .flow-node {
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
+    .node-label {
+        font-size: 0.8125rem;
+    }
+
+    .node-desc {
+        font-size: 0.625rem;
+    }
+
+    .feature-item {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
     }
 
     .scroll-indicator {
         display: none;
+    }
+
+    .problem-card,
+    .tech-card {
+        padding: var(--spacing-md);
+    }
+
+    .workflow-item {
+        padding: var(--spacing-md) var(--spacing-sm);
+    }
+
+    .highlight-number {
+        font-size: 2.5rem;
     }
 }
 
