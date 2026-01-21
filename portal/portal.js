@@ -9,6 +9,7 @@ const API_BASE = '../API';
 // Global state
 let currentSection = 'dashboard';
 let indexMappings = {};
+let helpsData = {}; // Maps HID to help name
 
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', function () {
@@ -706,12 +707,22 @@ document.getElementById('createHelpBtn')?.addEventListener('click', () => {
 /* ===== Indexes ===== */
 async function loadIndexMappings() {
     try {
+        // Load index mappings
         const res = await fetch(`${API_BASE}/Read/index.php`);
         const data = await res.json();
 
         if (data.success && data.data.indexes) {
             data.data.indexes.forEach(index => {
                 indexMappings[index.type] = index.mapping;
+            });
+        }
+
+        // Load helps data for name lookups
+        const helpsRes = await fetch(`${API_BASE}/Read/helps.php`);
+        const helpsJson = await helpsRes.json();
+        if (helpsJson.success && helpsJson.data.helps) {
+            helpsJson.data.helps.forEach(help => {
+                helpsData[help.HID] = help.name;
             });
         }
     } catch (error) {
@@ -756,11 +767,29 @@ async function loadIndexes() {
                 </div>
                 <div class="index-card-body">
                     ${Object.entries(index.mapping).map(([code, value]) => {
-            const displayValue = Array.isArray(value) ? value.join(', ') : value;
-            const escapedValue = String(displayValue).replace(/'/g, "\\'");
-            return `
+                        let displayCode = code;
+                        let displayValue = value;
+                        let escapedValue = '';
+                        
+                        if (index.type === 'help') {
+                            // For help mapping: code is HID, value is array of message codes
+                            displayCode = helpsData[code] || `Help #${code}`;
+                            if (Array.isArray(value)) {
+                                displayValue = value.map(msgCode => 
+                                    indexMappings.message?.[msgCode] || `Code ${msgCode}`
+                                ).join(', ');
+                                escapedValue = value.join(','); // Store as comma-separated IDs
+                            } else {
+                                escapedValue = String(value);
+                            }
+                        } else {
+                            displayValue = Array.isArray(value) ? value.join(', ') : value;
+                            escapedValue = String(displayValue).replace(/'/g, "\\'");
+                        }
+                        
+                        return `
                         <div class="mapping-item">
-                            <span class="mapping-code">${code}</span>
+                            <span class="mapping-code">${displayCode}</span>
                             <span class="mapping-value">${displayValue}</span>
                             <div class="mapping-actions">
                                 <button class="action-btn edit" onclick="editMappingEntry('${index.type}', '${code}', '${escapedValue}')" title="Edit">
@@ -783,82 +812,199 @@ async function loadIndexes() {
 }
 
 function editIndex(type) {
-    showModal(`Add Entry to ${type} Mapping`, `
-        <div class="form-row">
+    if (type === 'help') {
+        // For help mapping, show help resource select and message code checkboxes
+        const helpOptions = Object.entries(helpsData).map(([hid, name]) => 
+            `<option value="${hid}">${name}</option>`
+        ).join('');
+        
+        const messageCheckboxes = indexMappings.message ? 
+            Object.entries(indexMappings.message).map(([code, desc]) => `
+                <label class="checkbox-item">
+                    <input type="checkbox" name="messageCodes" value="${code}">
+                    <span>${desc}</span>
+                </label>
+            `).join('') : '';
+        
+        showModal(`Add Help Resource Mapping`, `
             <div class="form-group">
-                <label class="form-label">Code (Integer) *</label>
-                <input type="number" id="newMappingCode" class="form-input" min="0" required>
+                <label class="form-label">Help Resource *</label>
+                <select id="newHelpResource" class="form-select" required>
+                    <option value="">Select Help Resource</option>
+                    ${helpOptions}
+                </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Value *</label>
-                <input type="text" id="newMappingValue" class="form-input" required>
+                <label class="form-label">Applicable Message Types *</label>
+                <div class="checkbox-group" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px;">
+                    ${messageCheckboxes}
+                </div>
             </div>
-        </div>
-    `, async () => {
-        const code = document.getElementById('newMappingCode').value;
-        const value = document.getElementById('newMappingValue').value;
-
-        if (!code || !value) {
-            showToast('Please fill in both fields', 'error');
-            return;
-        }
-
-        const res = await fetch(`${API_BASE}/Update/index.php`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type: type,
-                add: { [code]: value }
-            })
+        `, async () => {
+            const hid = document.getElementById('newHelpResource').value;
+            const checkedBoxes = document.querySelectorAll('input[name="messageCodes"]:checked');
+            const messageCodes = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+            
+            if (!hid) {
+                showToast('Please select a help resource', 'error');
+                return;
+            }
+            if (messageCodes.length === 0) {
+                showToast('Please select at least one message type', 'error');
+                return;
+            }
+            
+            const res = await fetch(`${API_BASE}/Update/index.php`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: type,
+                    add: { [hid]: messageCodes }
+                })
+            });
+            const result = await res.json();
+            
+            if (result.success) {
+                showToast('Help mapping added successfully', 'success');
+                loadIndexes();
+                loadIndexMappings();
+            } else {
+                showToast(result.message || 'Update failed', 'error');
+            }
         });
-        const result = await res.json();
+    } else {
+        // For location/message mappings, use standard code/value input
+        showModal(`Add Entry to ${type} Mapping`, `
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Code (Integer) *</label>
+                    <input type="number" id="newMappingCode" class="form-input" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Value *</label>
+                    <input type="text" id="newMappingValue" class="form-input" required>
+                </div>
+            </div>
+        `, async () => {
+            const code = document.getElementById('newMappingCode').value;
+            const value = document.getElementById('newMappingValue').value;
 
-        if (result.success) {
-            showToast('Mapping added successfully', 'success');
-            loadIndexes();
-            loadIndexMappings();
-        } else {
-            showToast(result.message || 'Update failed', 'error');
-        }
-    });
+            if (!code || !value) {
+                showToast('Please fill in both fields', 'error');
+                return;
+            }
+
+            const res = await fetch(`${API_BASE}/Update/index.php`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: type,
+                    add: { [code]: value }
+                })
+            });
+            const result = await res.json();
+
+            if (result.success) {
+                showToast('Mapping added successfully', 'success');
+                loadIndexes();
+                loadIndexMappings();
+            } else {
+                showToast(result.message || 'Update failed', 'error');
+            }
+        });
+    }
 }
 
 function editMappingEntry(type, code, currentValue) {
-    showModal(`Edit ${type} Mapping Entry`, `
-        <div class="form-group">
-            <label class="form-label">Code</label>
-            <input type="text" class="form-input" value="${code}" disabled>
-        </div>
-        <div class="form-group">
-            <label class="form-label">Value *</label>
-            <input type="text" id="editMappingValue" class="form-input" value="${currentValue}" required>
-        </div>
-    `, async () => {
-        const value = document.getElementById('editMappingValue').value;
-
-        if (!value) {
-            showToast('Please enter a value', 'error');
-            return;
-        }
-
-        const res = await fetch(`${API_BASE}/Update/index.php`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type: type,
-                add: { [code]: value }
-            })
+    if (type === 'help') {
+        // For help mapping, show message code checkboxes
+        const currentCodes = currentValue.split(',').map(c => parseInt(c.trim()));
+        const helpName = helpsData[code] || `Help #${code}`;
+        
+        const messageCheckboxes = indexMappings.message ? 
+            Object.entries(indexMappings.message).map(([msgCode, desc]) => `
+                <label class="checkbox-item">
+                    <input type="checkbox" name="messageCodes" value="${msgCode}" ${currentCodes.includes(parseInt(msgCode)) ? 'checked' : ''}>
+                    <span>${desc}</span>
+                </label>
+            `).join('') : '';
+        
+        showModal(`Edit Help Mapping: ${helpName}`, `
+            <div class="form-group">
+                <label class="form-label">Help Resource</label>
+                <input type="text" class="form-input" value="${helpName}" disabled>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Applicable Message Types *</label>
+                <div class="checkbox-group" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; padding: 10px;">
+                    ${messageCheckboxes}
+                </div>
+            </div>
+        `, async () => {
+            const checkedBoxes = document.querySelectorAll('input[name="messageCodes"]:checked');
+            const messageCodes = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+            
+            if (messageCodes.length === 0) {
+                showToast('Please select at least one message type', 'error');
+                return;
+            }
+            
+            const res = await fetch(`${API_BASE}/Update/index.php`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: type,
+                    add: { [code]: messageCodes }
+                })
+            });
+            const result = await res.json();
+            
+            if (result.success) {
+                showToast('Help mapping updated successfully', 'success');
+                loadIndexes();
+                loadIndexMappings();
+            } else {
+                showToast(result.message || 'Update failed', 'error');
+            }
         });
-        const result = await res.json();
+    } else {
+        // For location/message mappings, use standard value input
+        showModal(`Edit ${type} Mapping Entry`, `
+            <div class="form-group">
+                <label class="form-label">Code</label>
+                <input type="text" class="form-input" value="${code}" disabled>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Value *</label>
+                <input type="text" id="editMappingValue" class="form-input" value="${currentValue}" required>
+            </div>
+        `, async () => {
+            const value = document.getElementById('editMappingValue').value;
 
-        if (result.success) {
-            showToast('Mapping updated successfully', 'success');
-            loadIndexes();
-            loadIndexMappings();
-        } else {
-            showToast(result.message || 'Update failed', 'error');
-        }
-    });
+            if (!value) {
+                showToast('Please enter a value', 'error');
+                return;
+            }
+
+            const res = await fetch(`${API_BASE}/Update/index.php`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: type,
+                    add: { [code]: value }
+                })
+            });
+            const result = await res.json();
+
+            if (result.success) {
+                showToast('Mapping updated successfully', 'success');
+                loadIndexes();
+                loadIndexMappings();
+            } else {
+                showToast(result.message || 'Update failed', 'error');
+            }
+        });
+    }
 }
 
 /* ===== Modal Functions ===== */
