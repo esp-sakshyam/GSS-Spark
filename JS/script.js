@@ -6,11 +6,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize all modules
     initScrollAnimations();
+    initSectionHeaderAnimations();
     initWorkflowAnimation();
     initSmoothScroll();
     initNavHighlight();
     initNavScroll();
     initMobileNav();
+    initParallaxEffects();
 });
 
 /**
@@ -44,6 +46,28 @@ function initScrollAnimations() {
     // Observe tech cards
     document.querySelectorAll('.tech-card').forEach(card => {
         observer.observe(card);
+    });
+
+    // Observe highlight content
+    document.querySelectorAll('.highlight-content').forEach(el => {
+        observer.observe(el);
+    });
+}
+
+/**
+ * Section header animations
+ */
+function initSectionHeaderAnimations() {
+    const headerObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.section-label, .section-title, .section-subtitle').forEach(el => {
+        headerObserver.observe(el);
     });
 }
 
@@ -156,20 +180,40 @@ function initNavHighlight() {
 }
 
 /**
- * Nav background change on scroll
+ * Nav background change on scroll with hide/show
  */
 function initNavScroll() {
     const nav = document.querySelector('.nav');
+    let lastScrollY = window.scrollY;
+    let ticking = false;
 
     const handleScroll = () => {
-        if (window.scrollY > 50) {
-            nav.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.08)';
+        const currentScrollY = window.scrollY;
+
+        // Add shadow when scrolled
+        if (currentScrollY > 50) {
+            nav.classList.add('scrolled');
         } else {
-            nav.style.boxShadow = 'none';
+            nav.classList.remove('scrolled');
         }
+
+        // Hide/show nav on scroll direction (optional - comment out if not wanted)
+        // if (currentScrollY > lastScrollY && currentScrollY > 200) {
+        //     nav.classList.add('hidden');
+        // } else {
+        //     nav.classList.remove('hidden');
+        // }
+
+        lastScrollY = currentScrollY;
+        ticking = false;
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(handleScroll);
+            ticking = true;
+        }
+    }, { passive: true });
 }
 
 /**
@@ -222,4 +266,28 @@ function animateCounter(element, target, duration = 2000) {
     };
 
     updateCounter();
+}
+
+/**
+ * Subtle parallax effects
+ */
+function initParallaxEffects() {
+    const heroBg = document.querySelector('.hero-bg-pattern');
+
+    if (!heroBg) return;
+
+    let ticking = false;
+
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                const scrollY = window.scrollY;
+                if (scrollY < window.innerHeight) {
+                    heroBg.style.transform = `translateY(${scrollY * 0.3}px)`;
+                }
+                ticking = false;
+            });
+            ticking = true;
+        }
+    }, { passive: true });
 }
