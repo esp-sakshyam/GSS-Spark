@@ -17,77 +17,81 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Portal | LifeLine Emergency Response System</title>
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
     <!-- Styles -->
     <link rel="stylesheet" href="portal.css">
 </head>
+
 <body>
     <!-- Sidebar Navigation -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="../index.html" class="logo">
                 <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
-                    <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2"/>
-                    <circle cx="20" cy="20" r="8" fill="currentColor"/>
-                    <path d="M20 2 L20 8 M20 32 L20 38 M2 20 L8 20 M32 20 L38 20" 
-                          stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="20" cy="20" r="18" stroke="currentColor" stroke-width="2" />
+                    <circle cx="20" cy="20" r="8" fill="currentColor" />
+                    <path d="M20 2 L20 8 M20 32 L20 38 M2 20 L8 20 M32 20 L38 20" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" />
                 </svg>
                 <span>LifeLine</span>
             </a>
         </div>
-        
+
         <nav class="sidebar-nav">
             <a href="#dashboard" class="nav-item active" data-section="dashboard">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7"/>
-                    <rect x="14" y="3" width="7" height="7"/>
-                    <rect x="14" y="14" width="7" height="7"/>
-                    <rect x="3" y="14" width="7" height="7"/>
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
                 </svg>
                 <span>Dashboard</span>
             </a>
             <a href="#messages" class="nav-item" data-section="messages">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                 </svg>
                 <span>Messages</span>
                 <span class="badge" id="pendingBadge">0</span>
             </a>
             <a href="#devices" class="nav-item" data-section="devices">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="4" y="4" width="16" height="16" rx="2"/>
-                    <circle cx="12" cy="12" r="3"/>
+                    <rect x="4" y="4" width="16" height="16" rx="2" />
+                    <circle cx="12" cy="12" r="3" />
                 </svg>
                 <span>Devices</span>
             </a>
             <a href="#helps" class="nav-item" data-section="helps">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
                 <span>Help Resources</span>
             </a>
             <a href="#indexes" class="nav-item" data-section="indexes">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="4 7 4 4 20 4 20 7"/>
-                    <line x1="9" y1="20" x2="15" y2="20"/>
-                    <line x1="12" y1="4" x2="12" y2="20"/>
+                    <polyline points="4 7 4 4 20 4 20 7" />
+                    <line x1="9" y1="20" x2="15" y2="20" />
+                    <line x1="12" y1="4" x2="12" y2="20" />
                 </svg>
                 <span>Index Mappings</span>
             </a>
         </nav>
-        
+
         <div class="sidebar-footer">
             <div class="user-info">
                 <div class="user-avatar">
@@ -100,45 +104,46 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
             </div>
             <button class="logout-btn" id="logoutBtn" title="Logout">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                    <polyline points="16 17 21 12 16 7"/>
-                    <line x1="21" y1="12" x2="9" y2="12"/>
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
             </button>
         </div>
     </aside>
-    
+
     <!-- Main Content -->
     <main class="main-content">
         <!-- Header -->
         <header class="header">
             <button class="menu-toggle" id="menuToggle">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="3" y1="12" x2="21" y2="12"/>
-                    <line x1="3" y1="6" x2="21" y2="6"/>
-                    <line x1="3" y1="18" x2="21" y2="18"/>
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <line x1="3" y1="18" x2="21" y2="18" />
                 </svg>
             </button>
             <h1 class="page-title" id="pageTitle">Dashboard</h1>
             <div class="header-actions">
                 <button class="refresh-btn" id="refreshBtn" title="Refresh Data">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="23 4 23 10 17 10"/>
-                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                        <polyline points="23 4 23 10 17 10" />
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
                     </svg>
                 </button>
             </div>
         </header>
-        
+
         <!-- Dashboard Section -->
         <section class="content-section active" id="dashboardSection">
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-icon critical">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                            <line x1="12" y1="9" x2="12" y2="13"/>
-                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                            <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
                         </svg>
                     </div>
                     <div class="stat-content">
@@ -149,8 +154,8 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                 <div class="stat-card">
                     <div class="stat-icon pending">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <polyline points="12 6 12 12 16 14"/>
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
                         </svg>
                     </div>
                     <div class="stat-content">
@@ -161,8 +166,8 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                 <div class="stat-card">
                     <div class="stat-icon devices">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="4" y="4" width="16" height="16" rx="2"/>
-                            <circle cx="12" cy="12" r="3"/>
+                            <rect x="4" y="4" width="16" height="16" rx="2" />
+                            <circle cx="12" cy="12" r="3" />
                         </svg>
                     </div>
                     <div class="stat-content">
@@ -173,8 +178,8 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                 <div class="stat-card">
                     <div class="stat-icon helps">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
                         </svg>
                     </div>
                     <div class="stat-content">
@@ -183,7 +188,7 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                     </div>
                 </div>
             </div>
-            
+
             <div class="dashboard-grid">
                 <div class="card recent-messages">
                     <div class="card-header">
@@ -203,13 +208,15 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                                     </tr>
                                 </thead>
                                 <tbody id="recentMessagesTable">
-                                    <tr><td colspan="5" class="loading">Loading...</td></tr>
+                                    <tr>
+                                        <td colspan="5" class="loading">Loading...</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card device-status">
                     <div class="card-header">
                         <h3>Device Status Overview</h3>
@@ -223,7 +230,7 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                 </div>
             </div>
         </section>
-        
+
         <!-- Messages Section -->
         <section class="content-section" id="messagesSection">
             <div class="section-header">
@@ -245,13 +252,13 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                 </div>
                 <button class="btn btn-primary" id="createMessageBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                     New Message
                 </button>
             </div>
-            
+
             <div class="card">
                 <div class="table-container">
                     <table class="data-table">
@@ -268,13 +275,15 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                             </tr>
                         </thead>
                         <tbody id="messagesTable">
-                            <tr><td colspan="8" class="loading">Loading...</td></tr>
+                            <tr>
+                                <td colspan="8" class="loading">Loading...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </section>
-        
+
         <!-- Devices Section -->
         <section class="content-section" id="devicesSection">
             <div class="section-header">
@@ -288,13 +297,13 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                 </div>
                 <button class="btn btn-primary" id="createDeviceBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                     Add Device
                 </button>
             </div>
-            
+
             <div class="card">
                 <div class="table-container">
                     <table class="data-table">
@@ -310,13 +319,15 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                             </tr>
                         </thead>
                         <tbody id="devicesTable">
-                            <tr><td colspan="7" class="loading">Loading...</td></tr>
+                            <tr>
+                                <td colspan="7" class="loading">Loading...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </section>
-        
+
         <!-- Helps Section -->
         <section class="content-section" id="helpsSection">
             <div class="section-header">
@@ -337,13 +348,13 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                 </div>
                 <button class="btn btn-primary" id="createHelpBtn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                     Add Resource
                 </button>
             </div>
-            
+
             <div class="card">
                 <div class="table-container">
                     <table class="data-table">
@@ -360,13 +371,15 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                             </tr>
                         </thead>
                         <tbody id="helpsTable">
-                            <tr><td colspan="8" class="loading">Loading...</td></tr>
+                            <tr>
+                                <td colspan="8" class="loading">Loading...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </section>
-        
+
         <!-- Indexes Section -->
         <section class="content-section" id="indexesSection">
             <div class="section-header">
@@ -380,13 +393,13 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                     </select>
                 </div>
             </div>
-            
+
             <div class="indexes-grid" id="indexesGrid">
                 <div class="loading">Loading...</div>
             </div>
         </section>
     </main>
-    
+
     <!-- Modal -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal" id="modal">
@@ -394,8 +407,8 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                 <h3 id="modalTitle">Modal Title</h3>
                 <button class="modal-close" id="modalClose">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
                 </button>
             </div>
@@ -408,13 +421,14 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
             </div>
         </div>
     </div>
-    
+
     <!-- Toast Notification -->
     <div class="toast" id="toast">
         <span class="toast-message" id="toastMessage"></span>
     </div>
-    
+
     <!-- JavaScript -->
     <script src="portal.js"></script>
 </body>
+
 </html>

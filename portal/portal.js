@@ -1,0 +1,1152 @@
+/**
+ * LifeLine Control Portal JavaScript
+ * Handles all CRUD operations and UI interactions
+ */
+
+// API Base URL
+const API_BASE = '../API';
+
+// Global state
+let currentSection = 'dashboard';
+let indexMappings = {};
+
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', function () {
+    initNavigation();
+    initModals();
+    initLogout();
+    initFilters();
+    loadDashboard();
+    loadIndexMappings();
+});
+
+/* ===== Navigation ===== */
+function initNavigation() {
+    const navItems = document.querySelectorAll('.nav-item, .view-all');
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const refreshBtn = document.getElementById('refreshBtn');
+
+    navItems.forEach(item => {
+        item.addEventListener('click', function (e) {
+            e.preventDefault();
+            const section = this.dataset.section;
+            if (section) {
+                switchSection(section);
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('open');
+                }
+            }
+        });
+    });
+
+    menuToggle?.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+    });
+
+    refreshBtn?.addEventListener('click', () => {
+        refreshBtn.classList.add('loading');
+        refreshCurrentSection().finally(() => {
+            setTimeout(() => refreshBtn.classList.remove('loading'), 500);
+        });
+    });
+}
+
+function switchSection(section) {
+    currentSection = section;
+
+    // Update nav active state
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.section === section);
+    });
+
+    // Update page title
+    const titles = {
+        dashboard: 'Dashboard',
+        messages: 'Emergency Messages',
+        devices: 'Devices',
+        helps: 'Help Resources',
+        indexes: 'Index Mappings'
+    };
+    document.getElementById('pageTitle').textContent = titles[section] || 'Dashboard';
+
+    // Show corresponding section
+    document.querySelectorAll('.content-section').forEach(s => {
+        s.classList.remove('active');
+    });
+    document.getElementById(section + 'Section')?.classList.add('active');
+
+    // Load section data
+    refreshCurrentSection();
+}
+
+async function refreshCurrentSection() {
+    switch (currentSection) {
+        case 'dashboard':
+            await loadDashboard();
+            break;
+        case 'messages':
+            await loadMessages();
+            break;
+        case 'devices':
+            await loadDevices();
+            break;
+        case 'helps':
+            await loadHelps();
+            break;
+        case 'indexes':
+            await loadIndexes();
+            break;
+    }
+}
+
+/* ===== Dashboard ===== */
+async function loadDashboard() {
+    try {
+        const [messagesRes, devicesRes, helpsRes] = await Promise.all([
+            fetch(`${API_BASE}/Read/message.php`),
+            fetch(`${API_BASE}/Read/device.php`),
+            fetch(`${API_BASE}/Read/helps.php?status=available`)
+        ]);
+
+        const messages = await messagesRes.json();
+        const devices = await devicesRes.json();
+        const helps = await helpsRes.json();
+
+        // Update stats
+        if (messages.success && messages.data.stats) {
+            document.getElementById('statCritical').textContent = messages.data.stats.critical_active || 0;
+            document.getElementById('statPending').textContent = messages.data.stats.pending || 0;
+            document.getElementById('pendingBadge').textContent = messages.data.stats.pending || '';
+        }
+
+        if (devices.success && devices.data.devices) {
+            const activeDevices = devices.data.devices.filter(d => d.status === 'active').length;
+            document.getElementById('statDevices').textContent = activeDevices;
+        }
+
+        if (helps.success && helps.data.helps) {
+            document.getElementById('statHelps').textContent = helps.data.helps.length;
+        }
+
+        // Populate recent messages table
+        if (messages.success && messages.data.messages) {
+            const tbody = document.getElementById('recentMessagesTable');
+            const recentMessages = messages.data.messages.slice(0, 5);
+
+            if (recentMessages.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No messages yet</td></tr>';
+            } else {
+                tbody.innerHTML = recentMessages.map(msg => `
+                    <tr>
+                        <td><span class="priority-badge ${msg.priority}">${msg.priority}</span></td>
+                        <td>${msg.location_name || 'Unknown'}</td>
+                        <td>${truncate(msg.message_text || 'Code: ' + msg.message_code, 30)}</td>
+                        <td><span class="status-badge ${msg.status}">${msg.status}</span></td>
+                        <td>${formatTime(msg.timestamp)}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // Populate device status list
+        if (devices.success && devices.data.devices) {
+            const list = document.getElementById('deviceStatusList');
+            list.innerHTML = devices.data.devices.map(device => `
+                <div class="device-status-item">
+                    <div class="device-indicator ${device.status}"></div>
+                    <div class="device-info">
+                        <div class="device-name">${device.device_name || 'Device ' + device.DID}</div>
+                        <div class="device-location">${device.location_name || 'Location ' + device.LID}</div>
+                    </div>
+                    <div class="device-battery">${device.battery_level}%</div>
+                </div>
+            `).join('');
+        }
+
+    } catch (error) {
+        console.error('Dashboard load error:', error);
+        showToast('Failed to load dashboard data', 'error');
+    }
+}
+
+/* ===== Messages CRUD ===== */
+async function loadMessages() {
+    const status = document.getElementById('messageStatusFilter')?.value || '';
+    const priority = document.getElementById('messagePriorityFilter')?.value || '';
+
+    let url = `${API_BASE}/Read/message.php?`;
+    if (status) url += `status=${status}&`;
+    if (priority) url += `priority=${priority}&`;
+
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const tbody = document.getElementById('messagesTable');
+
+        if (!data.success || !data.data.messages || data.data.messages.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No messages found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.data.messages.map(msg => `
+            <tr data-id="${msg.MID}">
+                <td>${msg.MID}</td>
+                <td><span class="priority-badge ${msg.priority}">${msg.priority}</span></td>
+                <td>${msg.device_name || 'Device ' + msg.DID}</td>
+                <td>${msg.location_name || 'Unknown'}</td>
+                <td title="${msg.message_text}">${truncate(msg.message_text || 'Code: ' + msg.message_code, 25)}</td>
+                <td><span class="status-badge ${msg.status}">${msg.status}</span></td>
+                <td>${formatTime(msg.timestamp)}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="action-btn view" onclick="viewMessage(${msg.MID})" title="View">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn edit" onclick="editMessage(${msg.MID})" title="Edit">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteMessage(${msg.MID})" title="Delete">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error('Messages load error:', error);
+        showToast('Failed to load messages', 'error');
+    }
+}
+
+function viewMessage(id) {
+    fetch(`${API_BASE}/Read/message.php?id=${id}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const msg = data.data;
+                showModal('Message Details', `
+                    <div class="form-group">
+                        <label class="form-label">Message ID</label>
+                        <p>${msg.MID}</p>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Priority</label>
+                            <p><span class="priority-badge ${msg.priority}">${msg.priority}</span></p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <p><span class="status-badge ${msg.status}">${msg.status}</span></p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Device</label>
+                        <p>${msg.device_name || 'Device ' + msg.DID} (${msg.location_name || 'Unknown Location'})</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Message</label>
+                        <p>${msg.message_text || 'Code: ' + msg.message_code}</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Signal Strength (RSSI)</label>
+                        <p>${msg.RSSI || 'N/A'} dBm</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <p>${msg.notes || 'No notes'}</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Timestamp</label>
+                        <p>${msg.timestamp}</p>
+                    </div>
+                `, null, true);
+            }
+        });
+}
+
+function editMessage(id) {
+    fetch(`${API_BASE}/Read/message.php?id=${id}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const msg = data.data;
+                showModal('Update Message', `
+                    <input type="hidden" id="editMID" value="${msg.MID}">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Priority</label>
+                            <select id="editPriority" class="form-select">
+                                <option value="low" ${msg.priority === 'low' ? 'selected' : ''}>Low</option>
+                                <option value="medium" ${msg.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                                <option value="high" ${msg.priority === 'high' ? 'selected' : ''}>High</option>
+                                <option value="critical" ${msg.priority === 'critical' ? 'selected' : ''}>Critical</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select id="editStatus" class="form-select">
+                                <option value="pending" ${msg.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="acknowledged" ${msg.status === 'acknowledged' ? 'selected' : ''}>Acknowledged</option>
+                                <option value="escalated" ${msg.status === 'escalated' ? 'selected' : ''}>Escalated</option>
+                                <option value="resolved" ${msg.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Notes</label>
+                        <textarea id="editNotes" class="form-textarea">${msg.notes || ''}</textarea>
+                    </div>
+                `, async () => {
+                    const updateData = {
+                        MID: parseInt(document.getElementById('editMID').value),
+                        priority: document.getElementById('editPriority').value,
+                        status: document.getElementById('editStatus').value,
+                        notes: document.getElementById('editNotes').value
+                    };
+
+                    const res = await fetch(`${API_BASE}/Update/message.php`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updateData)
+                    });
+                    const result = await res.json();
+
+                    if (result.success) {
+                        showToast('Message updated successfully', 'success');
+                        loadMessages();
+                    } else {
+                        showToast(result.message || 'Update failed', 'error');
+                    }
+                });
+            }
+        });
+}
+
+async function deleteMessage(id) {
+    if (!confirm('Are you sure you want to delete this message?')) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/Delete/message.php?id=${id}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast('Message deleted successfully', 'success');
+            loadMessages();
+        } else {
+            showToast(data.message || 'Delete failed', 'error');
+        }
+    } catch (error) {
+        showToast('Failed to delete message', 'error');
+    }
+}
+
+// Create Message Button Handler
+document.getElementById('createMessageBtn')?.addEventListener('click', () => {
+    loadDevicesForSelect().then(deviceOptions => {
+        const messageOptions = indexMappings.message ?
+            Object.entries(indexMappings.message).map(([code, text]) =>
+                `<option value="${code}">${code}: ${text}</option>`
+            ).join('') : '';
+
+        showModal('Create New Message', `
+            <div class="form-group">
+                <label class="form-label">Device *</label>
+                <select id="newMsgDevice" class="form-select" required>
+                    <option value="">Select Device</option>
+                    ${deviceOptions}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Message Type *</label>
+                <select id="newMsgCode" class="form-select" required>
+                    <option value="">Select Message Type</option>
+                    ${messageOptions}
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Priority</label>
+                    <select id="newMsgPriority" class="form-select">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">RSSI (dBm)</label>
+                    <input type="number" id="newMsgRSSI" class="form-input" placeholder="-70">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea id="newMsgNotes" class="form-textarea" placeholder="Additional information..."></textarea>
+            </div>
+        `, async () => {
+            const newMessage = {
+                DID: parseInt(document.getElementById('newMsgDevice').value),
+                message_code: parseInt(document.getElementById('newMsgCode').value),
+                priority: document.getElementById('newMsgPriority').value,
+                RSSI: document.getElementById('newMsgRSSI').value ? parseInt(document.getElementById('newMsgRSSI').value) : null,
+                notes: document.getElementById('newMsgNotes').value
+            };
+
+            if (!newMessage.DID || !newMessage.message_code) {
+                showToast('Please select device and message type', 'error');
+                return;
+            }
+
+            const res = await fetch(`${API_BASE}/Create/message.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newMessage)
+            });
+            const result = await res.json();
+
+            if (result.success) {
+                showToast('Message created successfully', 'success');
+                loadMessages();
+                loadDashboard();
+            } else {
+                showToast(result.message || 'Create failed', 'error');
+            }
+        });
+    });
+});
+
+/* ===== Devices CRUD ===== */
+async function loadDevices() {
+    const status = document.getElementById('deviceStatusFilter')?.value || '';
+
+    let url = `${API_BASE}/Read/device.php?`;
+    if (status) url += `status=${status}`;
+
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const tbody = document.getElementById('devicesTable');
+
+        if (!data.success || !data.data.devices || data.data.devices.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No devices found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.data.devices.map(device => `
+            <tr data-id="${device.DID}">
+                <td>${device.DID}</td>
+                <td>${device.device_name || 'Device ' + device.DID}</td>
+                <td>${device.location_name || 'Location ' + device.LID}</td>
+                <td><span class="status-badge ${device.status}">${device.status}</span></td>
+                <td>
+                    <div class="battery-level">
+                        <div class="battery-bar">
+                            <div class="battery-fill ${getBatteryClass(device.battery_level)}" style="width: ${device.battery_level}%"></div>
+                        </div>
+                        <span class="battery-text">${device.battery_level}%</span>
+                    </div>
+                </td>
+                <td>${formatTime(device.last_ping)}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="action-btn edit" onclick="editDevice(${device.DID})" title="Edit">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteDevice(${device.DID})" title="Delete">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error('Devices load error:', error);
+        showToast('Failed to load devices', 'error');
+    }
+}
+
+function editDevice(id) {
+    fetch(`${API_BASE}/Read/device.php?id=${id}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const device = data.data;
+                const locationOptions = indexMappings.location ?
+                    Object.entries(indexMappings.location).map(([code, name]) =>
+                        `<option value="${code}" ${device.LID == code ? 'selected' : ''}>${name}</option>`
+                    ).join('') : '';
+
+                showModal('Edit Device', `
+                    <input type="hidden" id="editDID" value="${device.DID}">
+                    <div class="form-group">
+                        <label class="form-label">Device Name</label>
+                        <input type="text" id="editDeviceName" class="form-input" value="${device.device_name || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Location</label>
+                        <select id="editDeviceLocation" class="form-select">
+                            ${locationOptions}
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select id="editDeviceStatus" class="form-select">
+                                <option value="active" ${device.status === 'active' ? 'selected' : ''}>Active</option>
+                                <option value="inactive" ${device.status === 'inactive' ? 'selected' : ''}>Inactive</option>
+                                <option value="maintenance" ${device.status === 'maintenance' ? 'selected' : ''}>Maintenance</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Battery Level</label>
+                            <input type="number" id="editDeviceBattery" class="form-input" min="0" max="100" value="${device.battery_level}">
+                        </div>
+                    </div>
+                `, async () => {
+                    const updateData = {
+                        DID: parseInt(document.getElementById('editDID').value),
+                        device_name: document.getElementById('editDeviceName').value,
+                        LID: parseInt(document.getElementById('editDeviceLocation').value),
+                        status: document.getElementById('editDeviceStatus').value,
+                        battery_level: parseInt(document.getElementById('editDeviceBattery').value)
+                    };
+
+                    const res = await fetch(`${API_BASE}/Update/device.php`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updateData)
+                    });
+                    const result = await res.json();
+
+                    if (result.success) {
+                        showToast('Device updated successfully', 'success');
+                        loadDevices();
+                    } else {
+                        showToast(result.message || 'Update failed', 'error');
+                    }
+                });
+            }
+        });
+}
+
+async function deleteDevice(id) {
+    if (!confirm('Are you sure you want to delete this device? All associated messages will also be deleted.')) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/Delete/device.php?id=${id}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast('Device deleted successfully', 'success');
+            loadDevices();
+        } else {
+            showToast(data.message || 'Delete failed', 'error');
+        }
+    } catch (error) {
+        showToast('Failed to delete device', 'error');
+    }
+}
+
+// Create Device Button Handler
+document.getElementById('createDeviceBtn')?.addEventListener('click', () => {
+    const locationOptions = indexMappings.location ?
+        Object.entries(indexMappings.location).map(([code, name]) =>
+            `<option value="${code}">${name}</option>`
+        ).join('') : '';
+
+    showModal('Add New Device', `
+        <div class="form-group">
+            <label class="form-label">Device Name</label>
+            <input type="text" id="newDeviceName" class="form-input" placeholder="e.g., Node-Namche-02">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Location *</label>
+            <select id="newDeviceLocation" class="form-select" required>
+                <option value="">Select Location</option>
+                ${locationOptions}
+            </select>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select id="newDeviceStatus" class="form-select">
+                    <option value="active" selected>Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="maintenance">Maintenance</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Battery Level</label>
+                <input type="number" id="newDeviceBattery" class="form-input" min="0" max="100" value="100">
+            </div>
+        </div>
+    `, async () => {
+        const newDevice = {
+            device_name: document.getElementById('newDeviceName').value,
+            LID: parseInt(document.getElementById('newDeviceLocation').value),
+            status: document.getElementById('newDeviceStatus').value,
+            battery_level: parseInt(document.getElementById('newDeviceBattery').value)
+        };
+
+        if (!newDevice.LID) {
+            showToast('Please select a location', 'error');
+            return;
+        }
+
+        const res = await fetch(`${API_BASE}/Create/device.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newDevice)
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            showToast('Device created successfully', 'success');
+            loadDevices();
+        } else {
+            showToast(result.message || 'Create failed', 'error');
+        }
+    });
+});
+
+/* ===== Helps CRUD ===== */
+async function loadHelps() {
+    const status = document.getElementById('helpStatusFilter')?.value || '';
+    const type = document.getElementById('helpTypeFilter')?.value || '';
+
+    let url = `${API_BASE}/Read/helps.php?`;
+    if (status) url += `status=${status}&`;
+    if (type) url += `type=${type}`;
+
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const tbody = document.getElementById('helpsTable');
+
+        if (!data.success || !data.data.helps || data.data.helps.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No help resources found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.data.helps.map(help => `
+            <tr data-id="${help.HID}">
+                <td>${help.HID}</td>
+                <td>${help.name}</td>
+                <td><span class="status-badge">${help.type}</span></td>
+                <td>${help.contact}</td>
+                <td>${help.location || 'N/A'}</td>
+                <td>${help.eta || 'N/A'}</td>
+                <td><span class="status-badge ${help.status}">${help.status}</span></td>
+                <td>
+                    <div class="action-btns">
+                        <button class="action-btn edit" onclick="editHelp(${help.HID})" title="Edit">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteHelp(${help.HID})" title="Delete">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+
+    } catch (error) {
+        console.error('Helps load error:', error);
+        showToast('Failed to load help resources', 'error');
+    }
+}
+
+function editHelp(id) {
+    fetch(`${API_BASE}/Read/helps.php?id=${id}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const help = data.data;
+                showModal('Edit Help Resource', `
+                    <input type="hidden" id="editHID" value="${help.HID}">
+                    <div class="form-group">
+                        <label class="form-label">Name *</label>
+                        <input type="text" id="editHelpName" class="form-input" value="${help.name}" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Type</label>
+                            <select id="editHelpType" class="form-select">
+                                <option value="rescue" ${help.type === 'rescue' ? 'selected' : ''}>Rescue</option>
+                                <option value="medical" ${help.type === 'medical' ? 'selected' : ''}>Medical</option>
+                                <option value="supplies" ${help.type === 'supplies' ? 'selected' : ''}>Supplies</option>
+                                <option value="general" ${help.type === 'general' ? 'selected' : ''}>General</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <select id="editHelpStatus" class="form-select">
+                                <option value="available" ${help.status === 'available' ? 'selected' : ''}>Available</option>
+                                <option value="dispatched" ${help.status === 'dispatched' ? 'selected' : ''}>Dispatched</option>
+                                <option value="busy" ${help.status === 'busy' ? 'selected' : ''}>Busy</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contact *</label>
+                        <input type="text" id="editHelpContact" class="form-input" value="${help.contact}" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Location</label>
+                            <input type="text" id="editHelpLocation" class="form-input" value="${help.location || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">ETA</label>
+                            <input type="text" id="editHelpETA" class="form-input" value="${help.eta || ''}" placeholder="e.g., 30 mins">
+                        </div>
+                    </div>
+                `, async () => {
+                    const updateData = {
+                        HID: parseInt(document.getElementById('editHID').value),
+                        name: document.getElementById('editHelpName').value,
+                        type: document.getElementById('editHelpType').value,
+                        status: document.getElementById('editHelpStatus').value,
+                        contact: document.getElementById('editHelpContact').value,
+                        location: document.getElementById('editHelpLocation').value,
+                        eta: document.getElementById('editHelpETA').value
+                    };
+
+                    const res = await fetch(`${API_BASE}/Update/helps.php`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updateData)
+                    });
+                    const result = await res.json();
+
+                    if (result.success) {
+                        showToast('Help resource updated successfully', 'success');
+                        loadHelps();
+                    } else {
+                        showToast(result.message || 'Update failed', 'error');
+                    }
+                });
+            }
+        });
+}
+
+async function deleteHelp(id) {
+    if (!confirm('Are you sure you want to delete this help resource?')) return;
+
+    try {
+        const res = await fetch(`${API_BASE}/Delete/helps.php?id=${id}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast('Help resource deleted successfully', 'success');
+            loadHelps();
+        } else {
+            showToast(data.message || 'Delete failed', 'error');
+        }
+    } catch (error) {
+        showToast('Failed to delete help resource', 'error');
+    }
+}
+
+// Create Help Button Handler
+document.getElementById('createHelpBtn')?.addEventListener('click', () => {
+    showModal('Add Help Resource', `
+        <div class="form-group">
+            <label class="form-label">Name *</label>
+            <input type="text" id="newHelpName" class="form-input" placeholder="e.g., Mountain Rescue Team" required>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Type</label>
+                <select id="newHelpType" class="form-select">
+                    <option value="rescue">Rescue</option>
+                    <option value="medical">Medical</option>
+                    <option value="supplies">Supplies</option>
+                    <option value="general" selected>General</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Status</label>
+                <select id="newHelpStatus" class="form-select">
+                    <option value="available" selected>Available</option>
+                    <option value="dispatched">Dispatched</option>
+                    <option value="busy">Busy</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Contact *</label>
+            <input type="text" id="newHelpContact" class="form-input" placeholder="Phone number" required>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Location</label>
+                <input type="text" id="newHelpLocation" class="form-input" placeholder="Base location">
+            </div>
+            <div class="form-group">
+                <label class="form-label">ETA</label>
+                <input type="text" id="newHelpETA" class="form-input" placeholder="e.g., 1-2 hours">
+            </div>
+        </div>
+    `, async () => {
+        const newHelp = {
+            name: document.getElementById('newHelpName').value,
+            type: document.getElementById('newHelpType').value,
+            status: document.getElementById('newHelpStatus').value,
+            contact: document.getElementById('newHelpContact').value,
+            location: document.getElementById('newHelpLocation').value,
+            eta: document.getElementById('newHelpETA').value
+        };
+
+        if (!newHelp.name || !newHelp.contact) {
+            showToast('Please fill in required fields', 'error');
+            return;
+        }
+
+        const res = await fetch(`${API_BASE}/Create/helps.php`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newHelp)
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            showToast('Help resource created successfully', 'success');
+            loadHelps();
+        } else {
+            showToast(result.message || 'Create failed', 'error');
+        }
+    });
+});
+
+/* ===== Indexes ===== */
+async function loadIndexMappings() {
+    try {
+        const res = await fetch(`${API_BASE}/Read/index.php`);
+        const data = await res.json();
+
+        if (data.success && data.data.indexes) {
+            data.data.indexes.forEach(index => {
+                indexMappings[index.type] = index.mapping;
+            });
+        }
+    } catch (error) {
+        console.error('Failed to load index mappings:', error);
+    }
+}
+
+async function loadIndexes() {
+    const type = document.getElementById('indexTypeFilter')?.value || '';
+
+    let url = `${API_BASE}/Read/index.php`;
+    if (type) url += `?type=${type}`;
+
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        const grid = document.getElementById('indexesGrid');
+
+        if (!data.success) {
+            grid.innerHTML = '<div class="empty-state">Failed to load indexes</div>';
+            return;
+        }
+
+        const indexes = type && data.data.mapping ? [data.data] : data.data.indexes;
+
+        if (!indexes || indexes.length === 0) {
+            grid.innerHTML = '<div class="empty-state">No index mappings found</div>';
+            return;
+        }
+
+        grid.innerHTML = indexes.map(index => `
+            <div class="index-card">
+                <div class="index-card-header">
+                    <h4>${index.type} Mapping</h4>
+                    <button class="action-btn" onclick="editIndex('${index.type}')" title="Add Entry" style="color: white;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="index-card-body">
+                    ${Object.entries(index.mapping).map(([code, value]) => `
+                        <div class="mapping-item">
+                            <span class="mapping-code">${code}</span>
+                            <span class="mapping-value">${value}</span>
+                            <div class="mapping-actions">
+                                <button class="action-btn edit" onclick="editMappingEntry('${index.type}', '${code}', '${value.replace(/'/g, "\\'")}')" title="Edit">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+
+    } catch (error) {
+        console.error('Indexes load error:', error);
+        showToast('Failed to load indexes', 'error');
+    }
+}
+
+function editIndex(type) {
+    showModal(`Add Entry to ${type} Mapping`, `
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Code (Integer) *</label>
+                <input type="number" id="newMappingCode" class="form-input" min="0" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Value *</label>
+                <input type="text" id="newMappingValue" class="form-input" required>
+            </div>
+        </div>
+    `, async () => {
+        const code = document.getElementById('newMappingCode').value;
+        const value = document.getElementById('newMappingValue').value;
+
+        if (!code || !value) {
+            showToast('Please fill in both fields', 'error');
+            return;
+        }
+
+        const res = await fetch(`${API_BASE}/Update/index.php`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: type,
+                add: { [code]: value }
+            })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            showToast('Mapping added successfully', 'success');
+            loadIndexes();
+            loadIndexMappings();
+        } else {
+            showToast(result.message || 'Update failed', 'error');
+        }
+    });
+}
+
+function editMappingEntry(type, code, currentValue) {
+    showModal(`Edit ${type} Mapping Entry`, `
+        <div class="form-group">
+            <label class="form-label">Code</label>
+            <input type="text" class="form-input" value="${code}" disabled>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Value *</label>
+            <input type="text" id="editMappingValue" class="form-input" value="${currentValue}" required>
+        </div>
+    `, async () => {
+        const value = document.getElementById('editMappingValue').value;
+
+        if (!value) {
+            showToast('Please enter a value', 'error');
+            return;
+        }
+
+        const res = await fetch(`${API_BASE}/Update/index.php`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: type,
+                add: { [code]: value }
+            })
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            showToast('Mapping updated successfully', 'success');
+            loadIndexes();
+            loadIndexMappings();
+        } else {
+            showToast(result.message || 'Update failed', 'error');
+        }
+    });
+}
+
+/* ===== Modal Functions ===== */
+function initModals() {
+    const overlay = document.getElementById('modalOverlay');
+    const closeBtn = document.getElementById('modalClose');
+    const cancelBtn = document.getElementById('modalCancel');
+
+    closeBtn?.addEventListener('click', hideModal);
+    cancelBtn?.addEventListener('click', hideModal);
+
+    overlay?.addEventListener('click', (e) => {
+        if (e.target === overlay) hideModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') hideModal();
+    });
+}
+
+let modalSubmitHandler = null;
+
+function showModal(title, content, onSubmit = null, viewOnly = false) {
+    const overlay = document.getElementById('modalOverlay');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const modalFooter = document.getElementById('modalFooter');
+    const submitBtn = document.getElementById('modalSubmit');
+
+    modalTitle.textContent = title;
+    modalBody.innerHTML = content;
+
+    if (viewOnly) {
+        modalFooter.style.display = 'none';
+    } else {
+        modalFooter.style.display = 'flex';
+
+        // Remove old handler
+        if (modalSubmitHandler) {
+            submitBtn.removeEventListener('click', modalSubmitHandler);
+        }
+
+        // Add new handler
+        modalSubmitHandler = async () => {
+            if (onSubmit) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Saving...';
+                try {
+                    await onSubmit();
+                    hideModal();
+                } catch (error) {
+                    console.error(error);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Save';
+                }
+            }
+        };
+        submitBtn.addEventListener('click', modalSubmitHandler);
+    }
+
+    overlay.classList.add('active');
+}
+
+function hideModal() {
+    const overlay = document.getElementById('modalOverlay');
+    const modalFooter = document.getElementById('modalFooter');
+    overlay.classList.remove('active');
+    modalFooter.style.display = 'flex';
+}
+
+/* ===== Filters ===== */
+function initFilters() {
+    // Message filters
+    document.getElementById('messageStatusFilter')?.addEventListener('change', loadMessages);
+    document.getElementById('messagePriorityFilter')?.addEventListener('change', loadMessages);
+
+    // Device filters
+    document.getElementById('deviceStatusFilter')?.addEventListener('change', loadDevices);
+
+    // Help filters
+    document.getElementById('helpStatusFilter')?.addEventListener('change', loadHelps);
+    document.getElementById('helpTypeFilter')?.addEventListener('change', loadHelps);
+
+    // Index filters
+    document.getElementById('indexTypeFilter')?.addEventListener('change', loadIndexes);
+}
+
+/* ===== Logout ===== */
+function initLogout() {
+    document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+        try {
+            await fetch(`${API_BASE}/auth/logout.php`);
+            window.location.href = '../login.php';
+        } catch (error) {
+            window.location.href = '../login.php';
+        }
+    });
+}
+
+/* ===== Helper Functions ===== */
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toastMessage');
+
+    toastMessage.textContent = message;
+    toast.className = `toast visible ${type}`;
+
+    setTimeout(() => {
+        toast.classList.remove('visible');
+    }, 3000);
+}
+
+function formatTime(timestamp) {
+    if (!timestamp) return 'Never';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function truncate(str, maxLength) {
+    if (!str) return '';
+    return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
+}
+
+function getBatteryClass(level) {
+    if (level > 50) return 'high';
+    if (level > 20) return 'medium';
+    return 'low';
+}
+
+async function loadDevicesForSelect() {
+    try {
+        const res = await fetch(`${API_BASE}/Read/device.php`);
+        const data = await res.json();
+
+        if (data.success && data.data.devices) {
+            return data.data.devices.map(d =>
+                `<option value="${d.DID}">${d.device_name || 'Device ' + d.DID} (${d.location_name || 'Unknown'})</option>`
+            ).join('');
+        }
+    } catch (error) {
+        console.error('Failed to load devices for select:', error);
+    }
+    return '';
+}
