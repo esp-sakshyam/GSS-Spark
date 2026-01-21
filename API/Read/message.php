@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 
 try {
     $db = getDB();
-    
+
     // Base query with joins to decode message and location
     $baseSelect = "
         SELECT m.*, 
@@ -32,61 +32,61 @@ try {
         LEFT JOIN indexes il ON il.type = 'location'
         LEFT JOIN indexes im ON im.type = 'message'
     ";
-    
+
     // Check if specific message ID is requested
     if (isset($_GET['id'])) {
-        $messageId = (int)$_GET['id'];
-        
+        $messageId = (int) $_GET['id'];
+
         $stmt = $db->prepare($baseSelect . " WHERE m.MID = :mid");
         $stmt->execute(['mid' => $messageId]);
         $message = $stmt->fetch();
-        
+
         if (!$message) {
             sendResponse(false, null, 'Message not found', 404);
         }
-        
+
         sendResponse(true, $message, 'Message retrieved successfully');
     }
-    
+
     // Build query for multiple messages
     $query = $baseSelect . " WHERE 1=1";
     $params = [];
-    
+
     // Filter by status
     if (isset($_GET['status'])) {
         $query .= " AND m.status = :status";
         $params['status'] = $_GET['status'];
     }
-    
+
     // Filter by priority
     if (isset($_GET['priority'])) {
         $query .= " AND m.priority = :priority";
         $params['priority'] = $_GET['priority'];
     }
-    
+
     // Filter by device ID
     if (isset($_GET['did'])) {
         $query .= " AND m.DID = :did";
-        $params['did'] = (int)$_GET['did'];
+        $params['did'] = (int) $_GET['did'];
     }
-    
+
     // Filter by location ID
     if (isset($_GET['lid'])) {
         $query .= " AND d.LID = :lid";
-        $params['lid'] = (int)$_GET['lid'];
+        $params['lid'] = (int) $_GET['lid'];
     }
-    
+
     // Filter by date range
     if (isset($_GET['from'])) {
         $query .= " AND m.timestamp >= :from_date";
         $params['from_date'] = $_GET['from'];
     }
-    
+
     if (isset($_GET['to'])) {
         $query .= " AND m.timestamp <= :to_date";
         $params['to_date'] = $_GET['to'];
     }
-    
+
     // Order by (newest first, critical priority first)
     $orderBy = isset($_GET['order']) ? $_GET['order'] : 'priority';
     if ($orderBy === 'priority') {
@@ -94,45 +94,51 @@ try {
     } else {
         $query .= " ORDER BY m.timestamp DESC";
     }
-    
+
     // Pagination
-    $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
-    $limit = isset($_GET['limit']) ? min(100, max(1, (int)$_GET['limit'])) : 50;
+    $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+    $limit = isset($_GET['limit']) ? min(100, max(1, (int) $_GET['limit'])) : 50;
     $offset = ($page - 1) * $limit;
-    
+
     $query .= " LIMIT :limit OFFSET :offset";
-    
+
     $stmt = $db->prepare($query);
-    
+
     foreach ($params as $key => $value) {
         $stmt->bindValue($key, $value);
     }
     $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
     $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
-    
+
     $stmt->execute();
     $messages = $stmt->fetchAll();
-    
+
     // Get total count for pagination
     $countQuery = "
         SELECT COUNT(*) FROM messages m
         JOIN devices d ON m.DID = d.DID
         WHERE 1=1
     ";
-    if (isset($_GET['status'])) $countQuery .= " AND m.status = :status";
-    if (isset($_GET['priority'])) $countQuery .= " AND m.priority = :priority";
-    if (isset($_GET['did'])) $countQuery .= " AND m.DID = :did";
-    if (isset($_GET['lid'])) $countQuery .= " AND d.LID = :lid";
-    if (isset($_GET['from'])) $countQuery .= " AND m.timestamp >= :from_date";
-    if (isset($_GET['to'])) $countQuery .= " AND m.timestamp <= :to_date";
-    
+    if (isset($_GET['status']))
+        $countQuery .= " AND m.status = :status";
+    if (isset($_GET['priority']))
+        $countQuery .= " AND m.priority = :priority";
+    if (isset($_GET['did']))
+        $countQuery .= " AND m.DID = :did";
+    if (isset($_GET['lid']))
+        $countQuery .= " AND d.LID = :lid";
+    if (isset($_GET['from']))
+        $countQuery .= " AND m.timestamp >= :from_date";
+    if (isset($_GET['to']))
+        $countQuery .= " AND m.timestamp <= :to_date";
+
     $countStmt = $db->prepare($countQuery);
     foreach ($params as $key => $value) {
         $countStmt->bindValue($key, $value);
     }
     $countStmt->execute();
     $total = $countStmt->fetchColumn();
-    
+
     // Get summary statistics
     $statsStmt = $db->query("
         SELECT 
@@ -144,18 +150,18 @@ try {
         FROM messages
     ");
     $stats = $statsStmt->fetch();
-    
+
     sendResponse(true, [
         'messages' => $messages,
         'stats' => $stats,
         'pagination' => [
             'page' => $page,
             'limit' => $limit,
-            'total' => (int)$total,
+            'total' => (int) $total,
             'pages' => ceil($total / $limit)
         ]
     ], 'Messages retrieved successfully');
-    
+
 } catch (PDOException $e) {
     error_log('Message read error: ' . $e->getMessage());
     sendResponse(false, null, 'Database error: ' . $e->getMessage(), 500);

@@ -36,13 +36,13 @@ if (!in_array($status, $validStatuses)) {
 
 try {
     $db = getDB();
-    
+
     // Insert new help resource
     $stmt = $db->prepare("
         INSERT INTO helps (name, contact, type, eta, status, location, created_at) 
         VALUES (:name, :contact, :type, :eta, :status, :location, NOW())
     ");
-    
+
     $stmt->execute([
         'name' => $name,
         'contact' => $contact,
@@ -51,16 +51,16 @@ try {
         'status' => $status,
         'location' => $location
     ]);
-    
+
     $helpId = $db->lastInsertId();
-    
+
     // Fetch created help resource
     $fetchStmt = $db->prepare("SELECT * FROM helps WHERE HID = :hid");
     $fetchStmt->execute(['hid' => $helpId]);
     $help = $fetchStmt->fetch();
-    
+
     sendResponse(true, $help, 'Help resource created successfully', 201);
-    
+
 } catch (PDOException $e) {
     error_log('Help create error: ' . $e->getMessage());
     sendResponse(false, null, 'Database error: ' . $e->getMessage(), 500);

@@ -23,26 +23,26 @@ if (!isset($input['HID'])) {
     sendResponse(false, null, 'Help ID (HID) is required', 400);
 }
 
-$helpId = (int)$input['HID'];
+$helpId = (int) $input['HID'];
 
 try {
     $db = getDB();
-    
+
     // Check if help resource exists
     $checkStmt = $db->prepare("SELECT HID FROM helps WHERE HID = :hid");
     $checkStmt->execute(['hid' => $helpId]);
-    
+
     if (!$checkStmt->fetch()) {
         sendResponse(false, null, 'Help resource not found', 404);
     }
-    
+
     // Build update query dynamically
     $updates = [];
     $params = ['hid' => $helpId];
-    
+
     // Updatable fields
     $allowedFields = ['name', 'contact', 'type', 'eta', 'status', 'location'];
-    
+
     foreach ($allowedFields as $field) {
         if (isset($input[$field])) {
             // Validate status
@@ -52,28 +52,28 @@ try {
                     sendResponse(false, null, 'Invalid status. Must be one of: ' . implode(', ', $validStatuses), 400);
                 }
             }
-            
+
             $updates[] = "$field = :$field";
             $params[$field] = trim($input[$field]);
         }
     }
-    
+
     if (empty($updates)) {
         sendResponse(false, null, 'No fields to update', 400);
     }
-    
+
     // Execute update
     $query = "UPDATE helps SET " . implode(', ', $updates) . " WHERE HID = :hid";
     $stmt = $db->prepare($query);
     $stmt->execute($params);
-    
+
     // Fetch updated help resource
     $fetchStmt = $db->prepare("SELECT * FROM helps WHERE HID = :hid");
     $fetchStmt->execute(['hid' => $helpId]);
     $help = $fetchStmt->fetch();
-    
+
     sendResponse(true, $help, 'Help resource updated successfully');
-    
+
 } catch (PDOException $e) {
     error_log('Help update error: ' . $e->getMessage());
     sendResponse(false, null, 'Database error: ' . $e->getMessage(), 500);

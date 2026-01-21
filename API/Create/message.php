@@ -22,9 +22,9 @@ if (!empty($missing)) {
 }
 
 // Extract and sanitize data
-$did = (int)$input['DID'];
-$rssi = isset($input['RSSI']) ? (int)$input['RSSI'] : null;
-$messageCode = (int)$input['message_code'];
+$did = (int) $input['DID'];
+$rssi = isset($input['RSSI']) ? (int) $input['RSSI'] : null;
+$messageCode = (int) $input['message_code'];
 $priority = isset($input['priority']) ? $input['priority'] : 'medium';
 $status = isset($input['status']) ? $input['status'] : 'pending';
 $notes = isset($input['notes']) ? trim($input['notes']) : null;
@@ -43,20 +43,20 @@ if (!in_array($status, $validStatuses)) {
 
 try {
     $db = getDB();
-    
+
     // Verify device exists
     $deviceStmt = $db->prepare("SELECT DID FROM devices WHERE DID = :did");
     $deviceStmt->execute(['did' => $did]);
-    
+
     if (!$deviceStmt->fetch()) {
         sendResponse(false, null, 'Device not found', 404);
     }
-    
+
     // Auto-determine priority based on message code if not specified
     // Critical messages (codes 1-5): altitude sickness, injury, illness, SAR, avalanche
     $criticalCodes = [1, 2, 4, 5];
     $highCodes = [3, 6, 7, 8, 9];
-    
+
     if (!isset($input['priority'])) {
         if (in_array($messageCode, $criticalCodes)) {
             $priority = 'critical';
@@ -64,13 +64,13 @@ try {
             $priority = 'high';
         }
     }
-    
+
     // Insert new message
     $stmt = $db->prepare("
         INSERT INTO messages (DID, RSSI, message_code, priority, status, notes, timestamp) 
         VALUES (:did, :rssi, :message_code, :priority, :status, :notes, NOW())
     ");
-    
+
     $stmt->execute([
         'did' => $did,
         'rssi' => $rssi,
@@ -79,13 +79,13 @@ try {
         'status' => $status,
         'notes' => $notes
     ]);
-    
+
     $messageId = $db->lastInsertId();
-    
+
     // Update device last_ping
     $updateDeviceStmt = $db->prepare("UPDATE devices SET last_ping = NOW() WHERE DID = :did");
     $updateDeviceStmt->execute(['did' => $did]);
-    
+
     // Fetch created message with expanded data
     $fetchStmt = $db->prepare("
         SELECT m.*, 
@@ -100,9 +100,9 @@ try {
     ");
     $fetchStmt->execute(['mid' => $messageId]);
     $message = $fetchStmt->fetch();
-    
+
     sendResponse(true, $message, 'Emergency message created successfully', 201);
-    
+
 } catch (PDOException $e) {
     error_log('Message create error: ' . $e->getMessage());
     sendResponse(false, null, 'Database error: ' . $e->getMessage(), 500);
