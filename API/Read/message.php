@@ -24,7 +24,7 @@ try {
     // Base query with joins to decode message and location
     $baseSelect = "
         SELECT m.*, 
-               d.device_name, d.LID, d.status as device_status, d.battery_level,
+               d.device_name, d.LID, d.status as device_status,
                JSON_UNQUOTE(JSON_EXTRACT(il.mapping, CONCAT('\$.', d.LID))) as location_name,
                JSON_UNQUOTE(JSON_EXTRACT(im.mapping, CONCAT('\$.', m.message_code))) as message_text
         FROM messages m
@@ -52,18 +52,6 @@ try {
     $query = $baseSelect . " WHERE 1=1";
     $params = [];
 
-    // Filter by status
-    if (isset($_GET['status'])) {
-        $query .= " AND m.status = :status";
-        $params['status'] = $_GET['status'];
-    }
-
-    // Filter by priority
-    if (isset($_GET['priority'])) {
-        $query .= " AND m.priority = :priority";
-        $params['priority'] = $_GET['priority'];
-    }
-
     // Filter by device ID
     if (isset($_GET['did'])) {
         $query .= " AND m.DID = :did";
@@ -74,6 +62,12 @@ try {
     if (isset($_GET['lid'])) {
         $query .= " AND d.LID = :lid";
         $params['lid'] = (int) $_GET['lid'];
+    }
+
+    // Filter by message code
+    if (isset($_GET['message_code'])) {
+        $query .= " AND m.message_code = :message_code";
+        $params['message_code'] = (int) $_GET['message_code'];
     }
 
     // Filter by date range
@@ -87,13 +81,8 @@ try {
         $params['to_date'] = $_GET['to'];
     }
 
-    // Order by (newest first, critical priority first)
-    $orderBy = isset($_GET['order']) ? $_GET['order'] : 'priority';
-    if ($orderBy === 'priority') {
-        $query .= " ORDER BY FIELD(m.priority, 'critical', 'high', 'medium', 'low'), m.timestamp DESC";
-    } else {
-        $query .= " ORDER BY m.timestamp DESC";
-    }
+    // Order by (newest first)
+    $query .= " ORDER BY m.timestamp DESC";
 
     // Pagination
     $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
@@ -119,14 +108,12 @@ try {
         JOIN devices d ON m.DID = d.DID
         WHERE 1=1
     ";
-    if (isset($_GET['status']))
-        $countQuery .= " AND m.status = :status";
-    if (isset($_GET['priority']))
-        $countQuery .= " AND m.priority = :priority";
     if (isset($_GET['did']))
         $countQuery .= " AND m.DID = :did";
     if (isset($_GET['lid']))
         $countQuery .= " AND d.LID = :lid";
+    if (isset($_GET['message_code']))
+        $countQuery .= " AND m.message_code = :message_code";
     if (isset($_GET['from']))
         $countQuery .= " AND m.timestamp >= :from_date";
     if (isset($_GET['to']))
@@ -139,21 +126,9 @@ try {
     $countStmt->execute();
     $total = $countStmt->fetchColumn();
 
-    // Get summary statistics
-    $statsStmt = $db->query("
-        SELECT 
-            COUNT(*) as total,
-            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-            SUM(CASE WHEN status = 'acknowledged' THEN 1 ELSE 0 END) as acknowledged,
-            SUM(CASE WHEN status = 'escalated' THEN 1 ELSE 0 END) as escalated,
-            SUM(CASE WHEN priority = 'critical' AND status != 'resolved' THEN 1 ELSE 0 END) as critical_active
-        FROM messages
-    ");
-    $stats = $statsStmt->fetch();
-
     sendResponse(true, [
         'messages' => $messages,
-        'stats' => $stats,
+        'total' => (int) $total,
         'pagination' => [
             'page' => $page,
             'limit' => $limit,

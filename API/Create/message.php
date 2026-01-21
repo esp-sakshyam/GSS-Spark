@@ -25,21 +25,6 @@ if (!empty($missing)) {
 $did = (int) $input['DID'];
 $rssi = isset($input['RSSI']) ? (int) $input['RSSI'] : null;
 $messageCode = (int) $input['message_code'];
-$priority = isset($input['priority']) ? $input['priority'] : 'medium';
-$status = isset($input['status']) ? $input['status'] : 'pending';
-$notes = isset($input['notes']) ? trim($input['notes']) : null;
-
-// Validate priority
-$validPriorities = ['low', 'medium', 'high', 'critical'];
-if (!in_array($priority, $validPriorities)) {
-    sendResponse(false, null, 'Invalid priority. Must be one of: ' . implode(', ', $validPriorities), 400);
-}
-
-// Validate status
-$validStatuses = ['pending', 'acknowledged', 'resolved', 'escalated'];
-if (!in_array($status, $validStatuses)) {
-    sendResponse(false, null, 'Invalid status. Must be one of: ' . implode(', ', $validStatuses), 400);
-}
 
 try {
     $db = getDB();
@@ -52,32 +37,16 @@ try {
         sendResponse(false, null, 'Device not found', 404);
     }
 
-    // Auto-determine priority based on message code if not specified
-    // Critical messages (codes 1-5): altitude sickness, injury, illness, SAR, avalanche
-    $criticalCodes = [1, 2, 4, 5];
-    $highCodes = [3, 6, 7, 8, 9];
-
-    if (!isset($input['priority'])) {
-        if (in_array($messageCode, $criticalCodes)) {
-            $priority = 'critical';
-        } elseif (in_array($messageCode, $highCodes)) {
-            $priority = 'high';
-        }
-    }
-
     // Insert new message
     $stmt = $db->prepare("
-        INSERT INTO messages (DID, RSSI, message_code, priority, status, notes, timestamp) 
-        VALUES (:did, :rssi, :message_code, :priority, :status, :notes, NOW())
+        INSERT INTO messages (DID, RSSI, message_code, timestamp) 
+        VALUES (:did, :rssi, :message_code, NOW())
     ");
 
     $stmt->execute([
         'did' => $did,
         'rssi' => $rssi,
-        'message_code' => $messageCode,
-        'priority' => $priority,
-        'status' => $status,
-        'notes' => $notes
+        'message_code' => $messageCode
     ]);
 
     $messageId = $db->lastInsertId();

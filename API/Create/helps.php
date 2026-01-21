@@ -23,7 +23,6 @@ if (!empty($missing)) {
 // Extract and sanitize data
 $name = trim($input['name']);
 $contact = trim($input['contact']);
-$type = isset($input['type']) ? trim($input['type']) : 'general';
 $eta = isset($input['eta']) ? trim($input['eta']) : null;
 $status = isset($input['status']) ? $input['status'] : 'available';
 $location = isset($input['location']) ? trim($input['location']) : null;
@@ -39,14 +38,13 @@ try {
 
     // Insert new help resource
     $stmt = $db->prepare("
-        INSERT INTO helps (name, contact, type, eta, status, location, created_at) 
-        VALUES (:name, :contact, :type, :eta, :status, :location, NOW())
+        INSERT INTO helps (name, contact, eta, status, location) 
+        VALUES (:name, :contact, :eta, :status, :location)
     ");
 
     $stmt->execute([
         'name' => $name,
         'contact' => $contact,
-        'type' => $type,
         'eta' => $eta,
         'status' => $status,
         'location' => $location

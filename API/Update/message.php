@@ -29,7 +29,7 @@ try {
     $db = getDB();
 
     // Check if message exists
-    $checkStmt = $db->prepare("SELECT MID, status FROM messages WHERE MID = :mid");
+    $checkStmt = $db->prepare("SELECT MID FROM messages WHERE MID = :mid");
     $checkStmt->execute(['mid' => $messageId]);
     $existing = $checkStmt->fetch();
 
@@ -41,34 +41,13 @@ try {
     $updates = [];
     $params = ['mid' => $messageId];
 
-    // Updatable fields
-    $allowedFields = ['priority', 'status', 'notes'];
+    // Updatable fields (simplified - only RSSI and message_code)
+    $allowedFields = ['RSSI', 'message_code'];
 
     foreach ($allowedFields as $field) {
         if (isset($input[$field])) {
-            // Validate priority
-            if ($field === 'priority') {
-                $validPriorities = ['low', 'medium', 'high', 'critical'];
-                if (!in_array($input[$field], $validPriorities)) {
-                    sendResponse(false, null, 'Invalid priority. Must be one of: ' . implode(', ', $validPriorities), 400);
-                }
-            }
-
-            // Validate status
-            if ($field === 'status') {
-                $validStatuses = ['pending', 'acknowledged', 'resolved', 'escalated'];
-                if (!in_array($input[$field], $validStatuses)) {
-                    sendResponse(false, null, 'Invalid status. Must be one of: ' . implode(', ', $validStatuses), 400);
-                }
-
-                // Set resolved_at timestamp when status changes to resolved
-                if ($input[$field] === 'resolved' && $existing['status'] !== 'resolved') {
-                    $updates[] = "resolved_at = NOW()";
-                }
-            }
-
             $updates[] = "$field = :$field";
-            $params[$field] = is_string($input[$field]) ? trim($input[$field]) : $input[$field];
+            $params[$field] = (int) $input[$field];
         }
     }
 
