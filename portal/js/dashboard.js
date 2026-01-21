@@ -21,7 +21,8 @@ console.log('[Dashboard] Functions loaded - apiGet:', typeof apiGet);
 
 // ===== DOM Elements =====
 let statMessages, statDevices, statHelps, statLocations;
-let messagesTableBody, deviceListContainer;
+let recentMessagesTable, deviceStatusList;
+let latestAlertContainer;
 let refreshBtn;
 
 // ===== Initialize =====
@@ -36,8 +37,9 @@ function initElements() {
     statDevices = document.getElementById('statDevices');
     statHelps = document.getElementById('statHelps');
     statLocations = document.getElementById('statLocations');
-    messagesTableBody = document.getElementById('messagesTableBody');
-    deviceListContainer = document.getElementById('deviceList');
+    recentMessagesTable = document.getElementById('recentMessagesTable');
+    deviceStatusList = document.getElementById('deviceStatusList');
+    latestAlertContainer = document.getElementById('latestAlert');
     refreshBtn = document.getElementById('refreshBtn');
 }
 
@@ -80,6 +82,9 @@ async function loadDashboard() {
         // Update stats
         updateStats(messages, devices, helps, indexes);
 
+        // Update latest alert (most prominent)
+        updateLatestAlert(messages);
+
         // Update tables
         updateRecentMessages(messages);
         updateDeviceList(devices);
@@ -116,43 +121,128 @@ function animateValue(element, value) {
     element.textContent = value;
 }
 
-// ===== Update Recent Messages =====
-function updateRecentMessages(messages) {
-    if (!messagesTableBody) return;
+// ===== Update Latest Alert =====
+function updateLatestAlert(messages) {
+    if (!latestAlertContainer) return;
 
     if (!messages || messages.length === 0) {
-        setTableEmpty(messagesTableBody, 5, 'No messages recorded yet');
+        latestAlertContainer.innerHTML = `
+            <div class="no-alert">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                </svg>
+                <p>No emergency alerts recorded</p>
+            </div>
+        `;
         return;
     }
 
-    // Sort by timestamp descending and take top 10
-    const recent = messages
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-        .slice(0, 10);
+    // Get the most recent message
+    const latest = [...messages].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+    const alertAge = getAlertAge(latest.timestamp);
+    const isRecent = alertAge.isRecent;
 
-    messagesTableBody.innerHTML = recent.map(msg => `
-        <tr>
-            <td><span class="message-code">${msg.message_code || 'N/A'}</span></td>
-            <td>${truncate(msg.device_name || `Device ${msg.DID}`, 20)}</td>
-            <td>
-                <div class="rssi-indicator">
-                    <div class="rssi-bar ${getRssiClass(msg.RSSI)}">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                        <span></span>
+    latestAlertContainer.innerHTML = `
+        <div class="alert-box ${isRecent ? 'alert-urgent' : 'alert-normal'}">
+            <div class="alert-header">
+                <div class="alert-badge ${isRecent ? 'pulse' : ''}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <div class="alert-title-group">
+                    <span class="alert-label">${isRecent ? 'URGENT ALERT' : 'LATEST ALERT'}</span>
+                    <h2 class="alert-title">${latest.message_text || 'Emergency Signal Received'}</h2>
+                </div>
+                <div class="alert-time">
+                    <span class="time-ago">${alertAge.text}</span>
+                    <span class="time-exact">${formatTime(latest.timestamp)}</span>
+                </div>
+            </div>
+            <div class="alert-details">
+                <div class="alert-detail-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    <div>
+                        <span class="detail-label">Location</span>
+                        <span class="detail-value">${latest.location_name || 'Unknown Location'}</span>
                     </div>
-                    <span>${msg.RSSI || 'N/A'}</span>
                 </div>
-            </td>
+                <div class="alert-detail-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <div>
+                        <span class="detail-label">Device</span>
+                        <span class="detail-value">${latest.device_name || 'Device ' + latest.DID}</span>
+                    </div>
+                </div>
+                <div class="alert-detail-item">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                    <div>
+                        <span class="detail-label">Signal Strength</span>
+                        <span class="detail-value">${latest.RSSI || 'N/A'} dBm</span>
+                    </div>
+                </div>
+            </div>
+            <div class="alert-actions">
+                <button class="btn btn-alert" onclick="viewMessage(${latest.MID})">
+                    View Full Details
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function getAlertAge(timestamp) {
+    const now = new Date();
+    const alertTime = new Date(timestamp);
+    const diffMs = now - alertTime;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) {
+        return { text: `${diffMins} min ago`, isRecent: diffMins < 30 };
+    } else if (diffHours < 24) {
+        return { text: `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`, isRecent: false };
+    } else {
+        return { text: `${diffDays} day${diffDays > 1 ? 's' : ''} ago`, isRecent: false };
+    }
+}
+
+// ===== Update Recent Messages =====
+function updateRecentMessages(messages) {
+    if (!recentMessagesTable) return;
+
+    if (!messages || messages.length === 0) {
+        setTableEmpty(recentMessagesTable, 4, 'No messages recorded yet');
+        return;
+    }
+
+    // Sort by timestamp descending and take top 5 (skip first one shown in alert)
+    const recent = [...messages]
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .slice(1, 6);
+
+    if (recent.length === 0) {
+        setTableEmpty(recentMessagesTable, 4, 'No additional messages');
+        return;
+    }
+
+    recentMessagesTable.innerHTML = recent.map(msg => `
+        <tr>
+            <td>${truncate(msg.location_name || 'Unknown', 20)}</td>
+            <td>${truncate(msg.message_text || 'Emergency', 25)}</td>
+            <td>${truncate(msg.device_name || 'Device ' + msg.DID, 15)}</td>
             <td>${formatTime(msg.timestamp)}</td>
-            <td>
-                <div class="action-btns">
-                    <button class="action-btn view" title="View Details" onclick="viewMessage(${msg.MID})">
-                        ${getIcon('eye')}
-                    </button>
-                </div>
-            </td>
         </tr>
     `).join('');
 }
@@ -168,10 +258,10 @@ function getRssiClass(rssi) {
 
 // ===== Update Device List =====
 function updateDeviceList(devices) {
-    if (!deviceListContainer) return;
+    if (!deviceStatusList) return;
 
     if (!devices || devices.length === 0) {
-        deviceListContainer.innerHTML = '<div class="empty-state"><p>No devices registered</p></div>';
+        deviceStatusList.innerHTML = '<div class="empty-state"><p>No devices registered</p></div>';
         return;
     }
 
@@ -182,10 +272,10 @@ function updateDeviceList(devices) {
         return new Date(b.last_ping || 0) - new Date(a.last_ping || 0);
     });
 
-    deviceListContainer.innerHTML = sorted.map(device => `
+    deviceStatusList.innerHTML = sorted.map(device => `
         <div class="device-item">
             <div class="device-info">
-                <span class="device-name">${device.device_name || `Device ${device.DID}`}</span>
+                <span class="device-name">${device.device_name || 'Device ' + device.DID}</span>
                 <span class="device-meta">
                     ${device.location_name || 'No location'} • 
                     ${device.last_ping ? formatTime(device.last_ping) : 'Never pinged'}

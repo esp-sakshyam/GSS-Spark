@@ -93,6 +93,14 @@ if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
             </div>
         </section>
 
+        <!-- Latest Alert Section (Prominent) -->
+        <section class="latest-alert-section" id="latestAlert">
+            <div class="alert-loading">
+                <div class="spinner"></div>
+                <p>Loading latest alert...</p>
+            </div>
+        </section>
+
         <!-- Dashboard Grid -->
         <section class="dashboard-grid">
             <!-- Recent Messages -->
