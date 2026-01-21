@@ -755,12 +755,15 @@ async function loadIndexes() {
                     </button>
                 </div>
                 <div class="index-card-body">
-                    ${Object.entries(index.mapping).map(([code, value]) => `
+                    ${Object.entries(index.mapping).map(([code, value]) => {
+            const displayValue = Array.isArray(value) ? value.join(', ') : value;
+            const escapedValue = String(displayValue).replace(/'/g, "\\'");
+            return `
                         <div class="mapping-item">
                             <span class="mapping-code">${code}</span>
-                            <span class="mapping-value">${value}</span>
+                            <span class="mapping-value">${displayValue}</span>
                             <div class="mapping-actions">
-                                <button class="action-btn edit" onclick="editMappingEntry('${index.type}', '${code}', '${value.replace(/'/g, "\\'")}')" title="Edit">
+                                <button class="action-btn edit" onclick="editMappingEntry('${index.type}', '${code}', '${escapedValue}')" title="Edit">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -768,7 +771,7 @@ async function loadIndexes() {
                                 </button>
                             </div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             </div>
         `).join('');
