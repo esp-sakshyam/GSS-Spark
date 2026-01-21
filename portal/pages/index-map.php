@@ -19,7 +19,8 @@
         <div class="page-header">
             <div class="header-content">
                 <h1>Index Mappings</h1>
-                <p class="header-subtitle">Configure message code to location and help resource mappings</p>
+                <p class="header-subtitle">Configure code to text mappings for locations, messages, and help resources
+                </p>
             </div>
             <div class="header-actions">
                 <button class="btn btn-secondary" id="refreshBtn">
@@ -31,13 +32,13 @@
                     </svg>
                     Refresh
                 </button>
-                <button class="btn btn-primary" id="addMappingBtn">
+                <button class="btn btn-primary" id="addEntryBtn">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    Add Mapping
+                    Add Entry
                 </button>
             </div>
         </div>
@@ -45,36 +46,27 @@
         <!-- Stats -->
         <div class="mapping-stats">
             <div class="stat-item">
-                <span class="stat-value" id="totalMappings">0</span>
-                <span class="stat-label">Total Mappings</span>
+                <span class="stat-value" id="totalLocations">0</span>
+                <span class="stat-label">Locations</span>
             </div>
             <div class="stat-item">
-                <span class="stat-value" id="uniqueLocations">0</span>
-                <span class="stat-label">Unique Locations</span>
+                <span class="stat-value" id="totalMessages">0</span>
+                <span class="stat-label">Messages</span>
             </div>
             <div class="stat-item">
-                <span class="stat-value" id="uniqueMessages">0</span>
-                <span class="stat-label">Message Codes</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-value" id="linkedHelps">0</span>
-                <span class="stat-label">Linked Resources</span>
+                <span class="stat-value" id="totalHelps">0</span>
+                <span class="stat-label">Help Resources</span>
             </div>
         </div>
 
         <!-- Filters -->
         <div class="filter-bar">
-            <select class="filter-select" id="filterLocation">
-                <option value="">All Locations</option>
+            <select class="filter-select" id="filterType">
+                <option value="">All Types</option>
+                <option value="location">Location Mappings</option>
+                <option value="message">Message Mappings</option>
+                <option value="help">Help Mappings</option>
             </select>
-            <div class="filter-search">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <input type="text" class="filter-input" id="searchInput" placeholder="Search mappings...">
-            </div>
         </div>
 
         <!-- Mappings Grid -->
@@ -85,12 +77,12 @@
         </div>
     </div>
 
-    <!-- Add/Edit Mapping Modal -->
-    <div class="modal-overlay" id="mappingModal">
+    <!-- Add/Edit Entry Modal -->
+    <div class="modal-overlay" id="entryModal">
         <div class="modal">
             <div class="modal-header">
-                <h3 id="modalTitle">Add Mapping</h3>
-                <button class="modal-close" onclick="closeModal('mappingModal')">
+                <h3 id="entryModalTitle">Add Entry</h3>
+                <button class="modal-close" onclick="closeModal('entryModal')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -99,35 +91,35 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="mappingForm">
-                    <input type="hidden" id="mappingId">
+                <form id="entryForm">
+                    <div class="form-group">
+                        <label class="form-label" for="entryType">Type</label>
+                        <select class="form-select" id="entryType" required>
+                            <option value="location">Location</option>
+                            <option value="message">Message</option>
+                            <option value="help">Help Resource</option>
+                        </select>
+                    </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="mappingLocation">Location</label>
-                        <input type="text" class="form-input" id="mappingLocation" placeholder="e.g., Main Lobby"
+                        <label class="form-label" for="entryCode">Code / ID</label>
+                        <input type="text" class="form-input mono" id="entryCode" placeholder="e.g., 1, 2, 3..."
                             required>
-                        <small class="form-hint">The physical location this code maps to</small>
+                        <small class="form-hint">The numeric code or ID</small>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="mappingMessage">Message Code</label>
-                        <input type="text" class="form-input mono" id="mappingMessage"
-                            placeholder="e.g., 0x01 or FIRE_ALARM" required>
-                        <small class="form-hint">The code received from devices</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Linked Help Resources</label>
-                        <div class="help-selector" id="helpSelector">
-                            <!-- Rendered by JS -->
-                        </div>
-                        <small class="form-hint">Select resources to respond to this message</small>
+                        <label class="form-label" for="entryValue">Value</label>
+                        <input type="text" class="form-input" id="entryValue"
+                            placeholder="Text value or comma-separated codes for help" required>
+                        <small class="form-hint">For help type: enter comma-separated message codes (e.g., 1, 2,
+                            5)</small>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('mappingModal')">Cancel</button>
-                <button class="btn btn-primary" id="saveMappingBtn">Save Mapping</button>
+                <button class="btn btn-secondary" onclick="closeModal('entryModal')">Cancel</button>
+                <button class="btn btn-primary" id="saveEntryBtn">Save Entry</button>
             </div>
         </div>
     </div>
@@ -136,7 +128,7 @@
     <div class="modal-overlay" id="deleteModal">
         <div class="modal" style="max-width: 400px;">
             <div class="modal-header">
-                <h3>Delete Mapping</h3>
+                <h3>Delete Entry</h3>
                 <button class="modal-close" onclick="closeModal('deleteModal')">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -146,7 +138,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete the mapping for <strong id="deleteLocation"></strong>?</p>
+                <p id="deleteMessage">Are you sure you want to delete this entry?</p>
                 <p class="text-muted">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
