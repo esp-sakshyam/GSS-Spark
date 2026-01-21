@@ -1,11 +1,14 @@
 /* ===== LifeLine Portal - Index Mappings JavaScript ===== */
+console.log('[IndexMap] index-map.js loading...');
+console.log('[IndexMap] window.LifeLine =', window.LifeLine);
 
 // Wait for LifeLine to be available
 if (!window.LifeLine) {
-    console.error('LifeLine not loaded. Make sure shared.js is included before this file.');
+    console.error('[IndexMap] LifeLine not loaded! Make sure shared.js is included before this file.');
+    throw new Error('LifeLine not loaded');
 }
 
-const LL = window.LifeLine || {};
+const LL = window.LifeLine;
 const apiGet = LL.apiGet;
 const apiPost = LL.apiPost;
 const apiPut = LL.apiPut;
@@ -16,6 +19,8 @@ const closeModal = LL.closeModal;
 const initModalClose = LL.initModalClose;
 const getIcon = LL.getIcon;
 const debounce = LL.debounce;
+
+console.log('[IndexMap] Functions loaded - apiGet:', typeof apiGet);
 
 // ===== State =====
 let allIndexes = [];

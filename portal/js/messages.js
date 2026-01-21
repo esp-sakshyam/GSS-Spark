@@ -1,11 +1,14 @@
 /* ===== LifeLine Portal - Messages JavaScript ===== */
+console.log('[Messages] messages.js loading...');
+console.log('[Messages] window.LifeLine =', window.LifeLine);
 
 // Wait for LifeLine to be available
 if (!window.LifeLine) {
-    console.error('LifeLine not loaded. Make sure shared.js is included before this file.');
+    console.error('[Messages] LifeLine not loaded! Make sure shared.js is included before this file.');
+    throw new Error('LifeLine not loaded');
 }
 
-const LL = window.LifeLine || {};
+const LL = window.LifeLine;
 const apiGet = LL.apiGet;
 const apiDelete = LL.apiDelete;
 const formatTime = LL.formatTime;
@@ -19,6 +22,8 @@ const closeModal = LL.closeModal;
 const initModalClose = LL.initModalClose;
 const getIcon = LL.getIcon;
 const debounce = LL.debounce;
+
+console.log('[Messages] Functions loaded - apiGet:', typeof apiGet);
 
 // ===== State =====
 let allMessages = [];

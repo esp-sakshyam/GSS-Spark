@@ -1,11 +1,14 @@
 /* ===== LifeLine Portal - Dashboard JavaScript ===== */
+console.log('[Dashboard] dashboard.js loading...');
+console.log('[Dashboard] window.LifeLine =', window.LifeLine);
 
 // Wait for LifeLine to be available
 if (!window.LifeLine) {
-    console.error('LifeLine not loaded. Make sure shared.js is included before this file.');
+    console.error('[Dashboard] LifeLine not loaded! Make sure shared.js is included before this file.');
+    throw new Error('LifeLine not loaded');
 }
 
-const LL = window.LifeLine || {};
+const LL = window.LifeLine;
 const apiGet = LL.apiGet;
 const formatTime = LL.formatTime;
 const truncate = LL.truncate;
@@ -13,6 +16,8 @@ const showToast = LL.showToast;
 const setTableLoading = LL.setTableLoading;
 const setTableEmpty = LL.setTableEmpty;
 const getIcon = LL.getIcon;
+
+console.log('[Dashboard] Functions loaded - apiGet:', typeof apiGet);
 
 // ===== DOM Elements =====
 let statMessages, statDevices, statHelps, statLocations;
@@ -49,7 +54,11 @@ function initEventListeners() {
 
 // ===== Load Dashboard Data =====
 async function loadDashboard() {
+    console.log('[Dashboard] loadDashboard() called');
+    console.log('[Dashboard] apiGet function:', apiGet);
+    
     try {
+        console.log('[Dashboard] Making API requests...');
         // Load all data in parallel
         const [messagesRes, devicesRes, helpsRes, indexesRes] = await Promise.all([
             apiGet('Read/message.php'),
@@ -57,12 +66,16 @@ async function loadDashboard() {
             apiGet('Read/helps.php'),
             apiGet('Read/index.php')
         ]);
+        
+        console.log('[Dashboard] API responses received:', { messagesRes, devicesRes, helpsRes, indexesRes });
 
         // Extract data from nested response
         const messages = messagesRes.data?.messages || [];
         const devices = devicesRes.data?.devices || [];
         const helps = helpsRes.data?.helps || [];
         const indexes = indexesRes.data?.indexes || [];
+
+        console.log('[Dashboard] Data extracted:', { messages: messages.length, devices: devices.length, helps: helps.length, indexes: indexes.length });
 
         // Update stats
         updateStats(messages, devices, helps, indexes);
@@ -72,7 +85,7 @@ async function loadDashboard() {
         updateDeviceList(devices);
 
     } catch (error) {
-        console.error('Dashboard load error:', error);
+        console.error('[Dashboard] Load error:', error);
         showToast('Failed to load dashboard data', 'error');
     }
 }

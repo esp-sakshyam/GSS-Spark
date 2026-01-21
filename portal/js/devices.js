@@ -1,11 +1,14 @@
 /* ===== LifeLine Portal - Devices JavaScript ===== */
+console.log('[Devices] devices.js loading...');
+console.log('[Devices] window.LifeLine =', window.LifeLine);
 
 // Wait for LifeLine to be available
 if (!window.LifeLine) {
-    console.error('LifeLine not loaded. Make sure shared.js is included before this file.');
+    console.error('[Devices] LifeLine not loaded! Make sure shared.js is included before this file.');
+    throw new Error('LifeLine not loaded');
 }
 
-const LL = window.LifeLine || {};
+const LL = window.LifeLine;
 const apiGet = LL.apiGet;
 const apiPost = LL.apiPost;
 const apiPut = LL.apiPut;
@@ -16,6 +19,8 @@ const openModal = LL.openModal;
 const closeModal = LL.closeModal;
 const initModalClose = LL.initModalClose;
 const getIcon = LL.getIcon;
+
+console.log('[Devices] Functions loaded - apiGet:', typeof apiGet);
 
 // ===== State =====
 let allDevices = [];

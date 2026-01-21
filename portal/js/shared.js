@@ -1,4 +1,5 @@
 /* ===== LifeLine Portal - Shared JavaScript Utilities ===== */
+console.log('[LifeLine] shared.js loading...');
 
 // API Base URL
 const API_BASE = '../../API';
@@ -327,6 +328,8 @@ function getIcon(name) {
 }
 
 // ===== Export for use in pages =====
+console.log('[LifeLine] Exporting window.LifeLine object...');
+
 window.LifeLine = {
     API_BASE,
     formatTime,
@@ -351,3 +354,5 @@ window.LifeLine = {
     getIcon,
     icons
 };
+
+console.log('[LifeLine] shared.js loaded successfully. window.LifeLine =', window.LifeLine);
