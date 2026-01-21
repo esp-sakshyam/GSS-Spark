@@ -167,12 +167,12 @@ function applyFilters() {
 
         // Search filter
         if (searchTerm) {
-            const deviceName = getDeviceName(msg.DID).toLowerCase();
-            const decoded = decodeMessage(msg.message_code).toLowerCase();
-            const code = (msg.message_code || '').toLowerCase();
+            const deviceName = (msg.device_name || `Device ${msg.DID}`).toLowerCase();
+            const messageText = (msg.message_text || '').toLowerCase();
+            const code = String(msg.message_code || '').toLowerCase();
 
             if (!deviceName.includes(searchTerm) &&
-                !decoded.includes(searchTerm) &&
+                !messageText.includes(searchTerm) &&
                 !code.includes(searchTerm)) {
                 return false;
             }
@@ -204,9 +204,9 @@ function renderMessages() {
     messagesTableBody.innerHTML = pageMessages.map(msg => `
         <tr data-mid="${msg.MID}">
             <td><span class="message-id">#${msg.MID}</span></td>
-            <td>${getDeviceName(msg.DID)}</td>
+            <td>${msg.device_name || `Device ${msg.DID}`}</td>
             <td><span class="message-code">${msg.message_code || 'N/A'}</span></td>
-            <td><span class="decoded-message" title="${decodeMessage(msg.message_code)}">${truncate(decodeMessage(msg.message_code), 30)}</span></td>
+            <td><span class="decoded-message" title="${msg.message_text || 'Unknown'}">${truncate(msg.message_text || `Code: ${msg.message_code}`, 30)}</span></td>
             <td>
                 <div class="rssi-indicator">
                     <div class="rssi-bar ${getRssiClass(msg.RSSI)}">
@@ -353,15 +353,19 @@ function viewMessage(mid) {
             </div>
             <div class="detail-row">
                 <span class="detail-label">Device</span>
-                <span class="detail-value">${getDeviceName(msg.DID)}</span>
+                <span class="detail-value">${msg.device_name || `Device ${msg.DID}`}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Location</span>
+                <span class="detail-value">${msg.location_name || 'Unknown'}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Message Code</span>
                 <span class="detail-value mono">${msg.message_code || 'N/A'}</span>
             </div>
             <div class="detail-row">
-                <span class="detail-label">Decoded Message</span>
-                <span class="detail-value">${decodeMessage(msg.message_code)}</span>
+                <span class="detail-label">Message</span>
+                <span class="detail-value">${msg.message_text || `Code: ${msg.message_code}`}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">RSSI</span>

@@ -104,9 +104,10 @@ function updateStats(messages, devices, helps, indexes) {
     const availableHelps = helps.filter(h => h.status === 'available').length;
     animateValue(statHelps, `${availableHelps}/${helps.length}`);
 
-    // Locations count
-    const locations = new Set(indexes.map(i => i.location)).size;
-    animateValue(statLocations, locations);
+    // Locations count - find location index and count its mapping entries
+    const locationIndex = indexes.find(i => i.type === 'location');
+    const locationCount = locationIndex && locationIndex.mapping ? Object.keys(locationIndex.mapping).length : 0;
+    animateValue(statLocations, locationCount);
 }
 
 function animateValue(element, value) {
