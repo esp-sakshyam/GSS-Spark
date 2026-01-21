@@ -1,4 +1,4 @@
-Emergency Response System (LoRa + ESP32)
+Emergency Response System (LoRa + ESP32+AI+sensors)
 
 Global hackathon  Team Spark | Global School of Science Hackathon
 
@@ -7,8 +7,10 @@ In rural Nepal—specifically in the remote Himal and Pahad regions—reliable c
 -   Lack of Cellular Coverage: Villagers cannot call for help.
 -   Delayed Response: It takes too long to get information to rescuers.
 -   Natural Disasters: Landslides and storms frequently cut off physical access.
+-   power outage
+-   mountaineers sos cant be sent as satellite connectivity is expensive and cellular might not be available(delayed rescue misson)
 
-💡 The Solution
+💡 The Solutions
 We built a resilient, off-grid Emergency Response System using LoRa Mesh Technology.
 This device operates independently of the internet or cellular networks to:
 1.  Forecast Health Risks: Basic on-device AI analyzes vitals to predict potential health emergencies.
@@ -39,20 +41,20 @@ The system consists of three main layers:
 -   Geography-Optimized: Long-range radio penetrates hilly terrain better than 5G/4G.
 -   Community-First: Villages become self-reliant "Sparks" of connectivity.
 
-🛠️ Tech Stack
+🛠️ Tech Stack of this device 
 | Component | Specification |
-| :--- | :--- |
 | Microcontroller | ESP32-S3 Cam (N16R8) |
 | Radio | LoRa Transceiver (433/868/915 MHz) |
 | Display | TFT LCD |
 | Firmware | C++ (Arduino IDE) |
 | Web Server | AsyncWebServer (Local) + Cloud Dashboard |
 
-🚀 Getting Started
+🚀 the working procedure of this device 
 1.  Power On: Switch on the device.
-2.  Connect: Join the WiFi AP `Spark_Emergency_Node`.
+2.  Connect: Join the WiFi AP `ESP-N1(location)`.
 3.  Configure: Go to `1.2.3.4` to set node ID (e.g., esp1A) and threshold values.
-4.  Deploy: Place device in open area for best LoRa range.
+4.  Deploy and run .
 
 ---
 Global hackathon Team Spark idea time 09:49 upadted copyright protected 
+
