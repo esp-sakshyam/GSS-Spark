@@ -81,8 +81,8 @@ function initEventListeners() {
 async function loadData() {
     try {
         const [indexesRes, helpsRes] = await Promise.all([
-            apiGet('indexes/read.php'),
-            apiGet('helps/read.php')
+            apiGet('Read/index.php'),
+            apiGet('Read/helps.php')
         ]);
 
         allIndexes = indexesRes.data || [];

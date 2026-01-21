@@ -52,10 +52,10 @@ async function loadDashboard() {
     try {
         // Load all data in parallel
         const [messages, devices, helps, indexes] = await Promise.all([
-            apiGet('messages/read.php'),
-            apiGet('devices/read.php'),
-            apiGet('helps/read.php'),
-            apiGet('indexes/read.php')
+            apiGet('Read/message.php'),
+            apiGet('Read/device.php'),
+            apiGet('Read/helps.php'),
+            apiGet('Read/index.php')
         ]);
 
         // Update stats

@@ -81,8 +81,8 @@ function initEventListeners() {
 async function loadData() {
     try {
         const [devicesRes, indexesRes] = await Promise.all([
-            apiGet('devices/read.php'),
-            apiGet('indexes/read.php')
+            apiGet('Read/device.php'),
+            apiGet('Read/index.php')
         ]);
 
         allDevices = devicesRes.data || [];
@@ -263,7 +263,7 @@ async function saveDevice() {
         let lid = null;
         if (location) {
             // We need to get the LID from indexes
-            const indexesRes = await apiGet('indexes/read.php');
+            const indexesRes = await apiGet('Read/index.php');
             const indexes = indexesRes.data || [];
             const matchingIndex = indexes.find(i => i.location === location);
             lid = matchingIndex?.LID || null;
@@ -271,7 +271,7 @@ async function saveDevice() {
 
         if (id) {
             // Update existing device
-            await apiPut('devices/update.php', {
+            await apiPut('Update/device.php', {
                 DID: id,
                 device_name: name,
                 LID: lid,
@@ -280,7 +280,7 @@ async function saveDevice() {
             showToast('Device updated successfully', 'success');
         } else {
             // Create new device
-            await apiPost('devices/create.php', {
+            await apiPost('Create/device.php', {
                 device_name: name,
                 LID: lid,
                 status: status
@@ -307,7 +307,7 @@ async function confirmDelete() {
         confirmDeleteBtn.disabled = true;
         confirmDeleteBtn.textContent = 'Deleting...';
 
-        await apiDelete(`devices/delete.php?DID=${deleteTargetId}`);
+        await apiDelete(`Delete/device.php?DID=${deleteTargetId}`);
         showToast('Device deleted successfully', 'success');
 
         closeModal('deleteModal');

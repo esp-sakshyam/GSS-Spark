@@ -86,7 +86,7 @@ function initEventListeners() {
 // ===== Load Data =====
 async function loadData() {
     try {
-        const response = await apiGet('helps/read.php');
+        const response = await apiGet('Read/helps.php');
         allHelps = response.data || [];
 
         updateStatusCounts();

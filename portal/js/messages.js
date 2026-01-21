@@ -82,9 +82,9 @@ function checkUrlParams() {
 async function loadData() {
     try {
         const [messagesRes, devicesRes, indexesRes] = await Promise.all([
-            apiGet('messages/read.php'),
-            apiGet('devices/read.php'),
-            apiGet('indexes/read.php')
+            apiGet('Read/message.php'),
+            apiGet('Read/device.php'),
+            apiGet('Read/index.php')
         ]);
 
         allMessages = messagesRes.data || [];
@@ -383,7 +383,7 @@ async function deleteMessage(mid) {
     if (!confirm('Are you sure you want to delete this message?')) return;
 
     try {
-        await apiDelete(`messages/delete.php?MID=${mid}`);
+        await apiDelete(`Delete/message.php?MID=${mid}`);
         showToast('Message deleted successfully', 'success');
 
         // Remove from local array
