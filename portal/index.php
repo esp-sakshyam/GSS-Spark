@@ -200,16 +200,15 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>Priority</th>
                                         <th>Location</th>
                                         <th>Message</th>
-                                        <th>Status</th>
+                                        <th>Device</th>
                                         <th>Time</th>
                                     </tr>
                                 </thead>
                                 <tbody id="recentMessagesTable">
                                     <tr>
-                                        <td colspan="5" class="loading">Loading...</td>
+                                        <td colspan="4" class="loading">Loading...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -235,19 +234,8 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
         <section class="content-section" id="messagesSection">
             <div class="section-header">
                 <div class="filters">
-                    <select id="messageStatusFilter" class="filter-select">
-                        <option value="">All Statuses</option>
-                        <option value="pending">Pending</option>
-                        <option value="acknowledged">Acknowledged</option>
-                        <option value="escalated">Escalated</option>
-                        <option value="resolved">Resolved</option>
-                    </select>
-                    <select id="messagePriorityFilter" class="filter-select">
-                        <option value="">All Priorities</option>
-                        <option value="critical">Critical</option>
-                        <option value="high">High</option>
-                        <option value="medium">Medium</option>
-                        <option value="low">Low</option>
+                    <select id="messageCodeFilter" class="filter-select">
+                        <option value="">All Message Types</option>
                     </select>
                 </div>
                 <button class="btn btn-primary" id="createMessageBtn">
@@ -265,18 +253,17 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Priority</th>
                                 <th>Device</th>
                                 <th>Location</th>
                                 <th>Message</th>
-                                <th>Status</th>
+                                <th>RSSI</th>
                                 <th>Time</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="messagesTable">
                             <tr>
-                                <td colspan="8" class="loading">Loading...</td>
+                                <td colspan="7" class="loading">Loading...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -313,14 +300,13 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                                 <th>Device Name</th>
                                 <th>Location</th>
                                 <th>Status</th>
-                                <th>Battery</th>
                                 <th>Last Ping</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="devicesTable">
                             <tr>
-                                <td colspan="7" class="loading">Loading...</td>
+                                <td colspan="6" class="loading">Loading...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -337,13 +323,6 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                         <option value="available">Available</option>
                         <option value="dispatched">Dispatched</option>
                         <option value="busy">Busy</option>
-                    </select>
-                    <select id="helpTypeFilter" class="filter-select">
-                        <option value="">All Types</option>
-                        <option value="rescue">Rescue</option>
-                        <option value="medical">Medical</option>
-                        <option value="supplies">Supplies</option>
-                        <option value="general">General</option>
                     </select>
                 </div>
                 <button class="btn btn-primary" id="createHelpBtn">
@@ -362,7 +341,6 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                             <tr>
                                 <th>ID</th>
                                 <th>Name</th>
-                                <th>Type</th>
                                 <th>Contact</th>
                                 <th>Location</th>
                                 <th>ETA</th>
@@ -372,7 +350,7 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                         </thead>
                         <tbody id="helpsTable">
                             <tr>
-                                <td colspan="8" class="loading">Loading...</td>
+                                <td colspan="7" class="loading">Loading...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -389,7 +367,6 @@ $userRole = $_SESSION['user_role'] ?? 'operator';
                         <option value="location">Location</option>
                         <option value="message">Message</option>
                         <option value="help">Help</option>
-                        <option value="status">Status</option>
                     </select>
                 </div>
             </div>

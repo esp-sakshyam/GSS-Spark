@@ -45,12 +45,6 @@ try {
         $params['status'] = $_GET['status'];
     }
 
-    // Filter by type
-    if (isset($_GET['type'])) {
-        $query .= " AND type = :type";
-        $params['type'] = $_GET['type'];
-    }
-
     // Search by name
     if (isset($_GET['search'])) {
         $query .= " AND (name LIKE :search OR location LIKE :search)";
@@ -82,9 +76,6 @@ try {
     $countQuery = "SELECT COUNT(*) FROM helps WHERE 1=1";
     if (isset($_GET['status'])) {
         $countQuery .= " AND status = :status";
-    }
-    if (isset($_GET['type'])) {
-        $countQuery .= " AND type = :type";
     }
     if (isset($_GET['search'])) {
         $countQuery .= " AND (name LIKE :search OR location LIKE :search)";

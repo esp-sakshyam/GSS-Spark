@@ -41,7 +41,7 @@ try {
     $params = ['hid' => $helpId];
 
     // Updatable fields
-    $allowedFields = ['name', 'contact', 'type', 'eta', 'status', 'location'];
+    $allowedFields = ['name', 'contact', 'eta', 'status', 'location'];
 
     foreach ($allowedFields as $field) {
         if (isset($input[$field])) {
