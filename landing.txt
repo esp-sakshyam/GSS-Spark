@@ -1,0 +1,5 @@
+This project is an off-grid Emergency Response System designed for remote areas (like rural Nepal) where internet, cellular networks, and power are unreliable.
+The system uses ESP32 + LoRa mesh networking + sensors + basic on-device AI to detect emergencies and transmit alerts over long distances without relying on mobile networks or satellites.
+
+
+The web component is not the core system, but a monitoring and control layer that receives data from a gateway node and displays it to authorities.
