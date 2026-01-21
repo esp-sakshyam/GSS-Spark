@@ -24,7 +24,6 @@ if (!empty($missing)) {
 $deviceName = isset($input['device_name']) ? trim($input['device_name']) : null;
 $lid = (int) $input['LID'];
 $status = isset($input['status']) ? $input['status'] : 'active';
-$batteryLevel = isset($input['battery_level']) ? (int) $input['battery_level'] : 100;
 
 // Validate status
 $validStatuses = ['active', 'inactive', 'maintenance'];
@@ -32,25 +31,19 @@ if (!in_array($status, $validStatuses)) {
     sendResponse(false, null, 'Invalid status. Must be one of: ' . implode(', ', $validStatuses), 400);
 }
 
-// Validate battery level
-if ($batteryLevel < 0 || $batteryLevel > 100) {
-    sendResponse(false, null, 'Battery level must be between 0 and 100', 400);
-}
-
 try {
     $db = getDB();
 
     // Insert new device
     $stmt = $db->prepare("
-        INSERT INTO devices (device_name, LID, status, battery_level, last_ping, created_at) 
-        VALUES (:device_name, :lid, :status, :battery_level, NOW(), NOW())
+        INSERT INTO devices (device_name, LID, status, last_ping) 
+        VALUES (:device_name, :lid, :status, NOW())
     ");
 
     $stmt->execute([
         'device_name' => $deviceName,
         'lid' => $lid,
-        'status' => $status,
-        'battery_level' => $batteryLevel
+        'status' => $status
     ]);
 
     $deviceId = $db->lastInsertId();

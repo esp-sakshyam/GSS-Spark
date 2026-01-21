@@ -41,7 +41,7 @@ try {
     $params = ['did' => $deviceId];
 
     // Updatable fields
-    $allowedFields = ['device_name', 'LID', 'status', 'battery_level', 'last_ping'];
+    $allowedFields = ['device_name', 'LID', 'status', 'last_ping'];
 
     foreach ($allowedFields as $field) {
         if (isset($input[$field])) {
@@ -50,14 +50,6 @@ try {
                 $validStatuses = ['active', 'inactive', 'maintenance'];
                 if (!in_array($input[$field], $validStatuses)) {
                     sendResponse(false, null, 'Invalid status. Must be one of: ' . implode(', ', $validStatuses), 400);
-                }
-            }
-
-            // Validate battery level
-            if ($field === 'battery_level') {
-                $input[$field] = (int) $input[$field];
-                if ($input[$field] < 0 || $input[$field] > 100) {
-                    sendResponse(false, null, 'Battery level must be between 0 and 100', 400);
                 }
             }
 
