@@ -1,0 +1,290 @@
+/* Messages Page Styles */
+
+/* Stats Bar */
+.stats-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    border-right: 1px solid var(--border-color);
+}
+
+.stat-item:last-child {
+    border-right: none;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.stat-label {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Message status badge */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.status-badge i {
+    font-size: 6px;
+}
+
+.status-badge.active {
+    background: var(--danger-dim);
+    color: var(--danger);
+}
+
+.status-badge.resolved {
+    background: var(--success-dim);
+    color: var(--success);
+}
+
+/* Message text column */
+.message-text {
+    max-width: 260px;
+}
+
+.message-type {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.message-meta {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+}
+
+/* RSSI Signal Indicator */
+.rssi-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rssi-bars {
+    display: flex;
+    gap: 2px;
+    align-items: flex-end;
+}
+
+.rssi-bar {
+    width: 3px;
+    background: var(--border-color);
+    border-radius: 1px;
+}
+
+.rssi-bar.active {
+    background: var(--success);
+}
+
+.rssi-bar:nth-child(1) {
+    height: 5px;
+}
+
+.rssi-bar:nth-child(2) {
+    height: 8px;
+}
+
+.rssi-bar:nth-child(3) {
+    height: 11px;
+}
+
+.rssi-bar:nth-child(4) {
+    height: 14px;
+}
+
+/* Detail View */
+.detail-row {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-row:hover {
+    background: var(--bg-tertiary);
+    margin: 0 -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    width: 130px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.detail-label i {
+    color: var(--accent);
+    width: 14px;
+}
+
+.detail-value {
+    flex: 1;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stats-bar {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .stat-item {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 10px 0;
+    }
+
+    .stat-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .message-text {
+        max-width: 180px;
+    }
+}
+
+@media (max-width: 576px) {
+    .detail-row {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .detail-label {
+        width: 100%;
+    }
+}
+
+/* Sending Overlay / Progress */
+.sending-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(4px);
+    display: none;
+    /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    border-radius: var(--radius-xl);
+}
+
+.sending-overlay.active {
+    display: flex !important;
+}
+
+.sending-content {
+    text-align: center;
+    padding: 30px;
+    color: #fff;
+}
+
+.sending-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.sending-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 8px;
+}
+
+.sending-subtitle {
+    font-size: 14px;
+    color: var(--accent);
+    margin: 0 0 20px;
+    font-weight: 500;
+}
+
+.progress-bar {
+    width: 100%;
+    max-width: 250px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin: 0 auto 16px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #ef4444);
+    border-radius: var(--radius-full);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.sending-info {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+    max-width: 220px;
+    margin: 0 auto;
+}
+
+/* Button loading state */
+.btn-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}

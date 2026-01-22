@@ -1,0 +1,116 @@
+/* LifeLine Portal - Emails Page Styles */
+
+.info-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--info-dim);
+    border: 1px solid var(--info);
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.info-banner i {
+    color: var(--info);
+    font-size: 16px;
+}
+
+/* Table Styles */
+.email-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.email-table th,
+.email-table td {
+    padding: 14px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.email-table th {
+    background: var(--bg-tertiary);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+}
+
+.email-table tr:last-child td {
+    border-bottom: none;
+}
+
+.email-table tr:hover td {
+    background: var(--bg-hover);
+}
+
+.email-table .sn-col {
+    width: 60px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.email-table .email-col {
+    font-family: var(--font-mono);
+    font-size: 14px;
+}
+
+.email-table .email-col i {
+    margin-right: 8px;
+    color: var(--accent);
+}
+
+.email-table .actions-col {
+    width: 100px;
+    text-align: center;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.action-btn.edit:hover {
+    color: var(--info);
+}
+
+.action-btn.delete:hover {
+    color: var(--danger);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.empty-state p {
+    font-size: 14px;
+    margin-bottom: 20px;
+}
