@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 21, 2026 at 10:03 AM
+-- Generation Time: Jan 21, 2026 at 04:52 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -24,117 +24,45 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `devices`
---
-
-CREATE TABLE `devices` (
-  `DID` int(10) NOT NULL,
-  `LID` int(10) NOT NULL,
-  `last_ping` text NOT NULL DEFAULT '00:00:00:00'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='DID=Device ID, LID= Location ID, ping= timestamp';
-
--- --------------------------------------------------------
-
---
--- Table structure for table `helps`
---
-
-CREATE TABLE `helps` (
-  `HID` int(11) NOT NULL,
-  `name` text NOT NULL,
-  `contact` text NOT NULL,
-  `eta` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `indexes`
 --
 
 CREATE TABLE `indexes` (
-  `location` text NOT NULL,
-  `message` text NOT NULL,
-  `help` text NOT NULL,
-  `auto` text NOT NULL
+  `IID` int(11) NOT NULL,
+  `type` enum('location','message','help') NOT NULL,
+  `mapping` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'JSON object mapping integer codes to meanings. For help type: maps HID to array of applicable message codes' CHECK (json_valid(`mapping`)),
+  `description` text DEFAULT NULL,
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
-
 --
--- Table structure for table `messages`
+-- Dumping data for table `indexes`
 --
 
-CREATE TABLE `messages` (
-  `MID` int(10) NOT NULL,
-  `DID` int(10) NOT NULL,
-  `RSII` int(10) NOT NULL,
-  `timestamp` text NOT NULL,
-  `message` int(10) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='MID=messageID, DID=deviceID,RSII=signal strength,message=main';
-
--- --------------------------------------------------------
-
---
--- Table structure for table `user`
---
-
-CREATE TABLE `user` (
-  `UID` int(11) NOT NULL,
-  `name` text NOT NULL,
-  `password` text NOT NULL,
-  `last_login` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+INSERT INTO `indexes` (`IID`, `type`, `mapping`, `description`, `updated_at`) VALUES
+(1, 'location', '{\n  \"1\": \"Namche Bazaar\",\n  \"2\": \"Lukla Village\",\n  \"3\": \"Tengboche\",\n  \"4\": \"Dingboche\",\n  \"5\": \"Gorak Shep\",\n  \"6\": \"Phakding\",\n  \"7\": \"Khumjung\",\n  \"8\": \"Pangboche\",\n  \"9\": \"Pheriche\",\n  \"10\": \"Lobuche\",\n  \"11\": \"Syangboche\",\n  \"12\": \"Thame\",\n  \"13\": \"Gokyo\",\n  \"14\": \"Machermo\",\n  \"15\": \"Chhukung\"\n}', 'Maps location codes to village names in Solukhumbu region', '2026-01-21 10:11:08'),
+(2, 'message', '{\n  \"1\": \"Medical Emergency - Altitude Sickness\",\n  \"2\": \"Medical Emergency - Injury\",\n  \"3\": \"Medical Emergency - Illness\",\n  \"4\": \"Search and Rescue Required\",\n  \"5\": \"Avalanche Alert\",\n  \"6\": \"Landslide Warning\",\n  \"7\": \"Fire Emergency\",\n  \"8\": \"Flood Warning\",\n  \"9\": \"Lost/Missing Person\",\n  \"10\": \"Equipment Failure\",\n  \"11\": \"Weather Emergency\",\n  \"12\": \"Infrastructure Damage\",\n  \"13\": \"Food/Water Shortage\",\n  \"14\": \"Communication Lost\",\n  \"15\": \"All Clear - Situation Normal\"\n}', 'Maps message codes to emergency types', '2026-01-21 10:11:08');
 
 --
 -- Indexes for dumped tables
 --
 
 --
--- Indexes for table `devices`
+-- Indexes for table `indexes`
 --
-ALTER TABLE `devices`
-  ADD PRIMARY KEY (`DID`);
-
---
--- Indexes for table `helps`
---
-ALTER TABLE `helps`
-  ADD PRIMARY KEY (`HID`);
-
---
--- Indexes for table `messages`
---
-ALTER TABLE `messages`
-  ADD PRIMARY KEY (`MID`);
-
---
--- Indexes for table `user`
---
-ALTER TABLE `user`
-  ADD PRIMARY KEY (`UID`);
+ALTER TABLE `indexes`
+  ADD PRIMARY KEY (`IID`),
+  ADD UNIQUE KEY `type_unique` (`type`);
 
 --
 -- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT for table `helps`
+-- AUTO_INCREMENT for table `indexes`
 --
-ALTER TABLE `helps`
-  MODIFY `HID` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `messages`
---
-ALTER TABLE `messages`
-  MODIFY `MID` int(10) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `user`
---
-ALTER TABLE `user`
-  MODIFY `UID` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `indexes`
+  MODIFY `IID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
