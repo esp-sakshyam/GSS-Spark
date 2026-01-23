@@ -1,6 +1,6 @@
 Emergency Response System (LoRa + ESP32+AI+sensors)
 
-Global hackathon Team Spark | Global School of Science Hackathon
+Global hackathon Team Spark | Global School of Science Hackathon won first price
 
 🚨 The Problem
 In rural Nepal—specifically in the remote Himal and Pahad regions—reliable communication is often unavailable. Emergencies like sudden sickness or severe weather can become life-threatening due to:
@@ -65,3 +65,4 @@ The system consists of three main layers:
 ---
 
 Global hackathon Team Spark idea time 09:49 upadted copyright protected
+
