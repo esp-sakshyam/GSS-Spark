@@ -61,8 +61,31 @@ The system consists of three main layers:
 2.  Connect: Join the WiFi AP `ESP-N1(location)`.
 3.  Configure: Go to `1.2.3.4` to set node ID (e.g., esp1A) and threshold values.
 4.  Deploy and run .
+for display
+tft display 
+d2 -d13
+d3-d12
+d4-d14
+d5-d27
+d6-d26
+d7-d25
+d0-33
+d1-32
+rst-d18
+cs-D19
+rs-d21
+wr-d22
+r0- d23
 
+lora esp
+sck-16
+miso d5
+mosi-d17
+cs-d2
+d10-d4 
+rst d15
 ---
 
 Global hackathon Team Spark idea time 09:49 upadted copyright protected
+
 
