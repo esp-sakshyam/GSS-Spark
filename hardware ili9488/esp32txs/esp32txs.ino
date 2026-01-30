@@ -1081,7 +1081,10 @@ char keypadLayout[KEYPAD_ROWS][KEYPAD_COLS] = {
 #include <Adafruit_NeoPixel.h>
 Adafruit_NeoPixel neopixel(NEOPIXEL_COUNT, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
-// Simple Aeroplane Strobe Effect
+// Strobe configuration
+enum StrobeEffect { STROBE_RAINBOW, STROBE_RED, STROBE_BLUE, STROBE_GREEN };
+StrobeEffect currentStrobeEffect = STROBE_RAINBOW;
+
 // Rainbow Aeroplane Strobe Effect
 void flashingStrobe() {
   static unsigned long lastStrobe = 0;
@@ -1094,10 +1097,17 @@ void flashingStrobe() {
     lastStrobe = now;
     isOn = true;
 
-    // Cycle through rainbow colors for every flicker
-    hue += 8000;
-    neopixel.setPixelColor(0,
-                           neopixel.gamma32(neopixel.ColorHSV(hue, 255, 255)));
+    if (currentStrobeEffect == STROBE_RAINBOW) {
+      hue += 8000;
+      neopixel.setPixelColor(
+          0, neopixel.gamma32(neopixel.ColorHSV(hue, 255, 255)));
+    } else if (currentStrobeEffect == STROBE_RED) {
+      neopixel.setPixelColor(0, neopixel.Color(255, 0, 0));
+    } else if (currentStrobeEffect == STROBE_BLUE) {
+      neopixel.setPixelColor(0, neopixel.Color(0, 0, 255));
+    } else if (currentStrobeEffect == STROBE_GREEN) {
+      neopixel.setPixelColor(0, neopixel.Color(0, 255, 0));
+    }
     neopixel.show();
   } else if (isOn && (now - lastStrobe >= 80)) { // 80ms flash duration
     isOn = false;
@@ -1196,7 +1206,8 @@ enum ScreenState {
   SCREEN_SETTINGS,
   SCREEN_INFO,
   SCREEN_CALIBRATE,
-  SCREEN_LANDSLIDE_ALERT
+  SCREEN_LANDSLIDE_ALERT,
+  SCREEN_NEO_SETTINGS
 };
 
 // Global Configuration (Moved to Top)
@@ -1236,19 +1247,38 @@ bool transmitAlert();
 
 // Visualization
 void drawMPUBarGraph(float magnitude) {
-  if (currentScreen != SCREEN_MENU || (magnitude < 1.2 && !landslideDetecting))
+  // Always show on Menu for live monitoring as requested
+  if (currentScreen != SCREEN_MENU)
     return;
-  int barX = SCREEN_WIDTH - 100;
-  int barY = HEADER_HEIGHT + 10;
-  int barW = 80;
-  int barH = 10;
 
-  // Visualizing motion intensity
-  int fillW = map(constrain(magnitude * 10, 10, 40), 10, 40, 0, barW);
+  static unsigned long lastUpdate = 0;
+  if (millis() - lastUpdate < 50)
+    return; // Limit refresh to 20fps for anti-flicker
+  lastUpdate = millis();
 
-  drawRect(barX, barY, barW, barH, COLOR_BADGE_BG);
-  uint16_t barColor = (magnitude > 1.8) ? COLOR_RED : COLOR_GREEN;
-  fillRect(barX + 1, barY + 1, fillW, barH - 2, barColor);
+  int barW = 30;
+  int barH = 5;
+  int spacing = 4;
+  int totalW = (barW * 2) + spacing;
+  int startX = (SCREEN_WIDTH - totalW) / 2;
+  int startY = 4; // Move inside Header area (Top Middle)
+
+  // Draw container inside header
+  drawRect(startX - 2, startY - 2, totalW + 4, barH + 4,
+           RGB565(40, 60, 90)); // Darker blue for header integration
+
+  // Left Bar (Current G-Force relative to Warning 1.8G)
+  int fill1 = map(constrain(magnitude * 10, 10, 18), 10, 18, 0, barW);
+  fillRect(startX, startY, barW, barH, RGB565(10, 20, 35)); // Clear background
+  fillRect(startX, startY, fill1, barH,
+           (magnitude > 1.8) ? COLOR_RED : COLOR_CYAN_C);
+
+  // Right Bar (SOS progress - placeholder: shows magnitude relative to 2.5G)
+  int fill2 = map(constrain(magnitude * 10, 10, 25), 10, 25, 0, barW);
+  fillRect(startX + barW + spacing, startY, barW, barH,
+           RGB565(10, 20, 35)); // Clear
+  fillRect(startX + barW + spacing, startY, fill2, barH,
+           (magnitude > 2.2) ? COLOR_AMBER : COLOR_PURPLE);
 }
 
 void checkLandslide() {
@@ -1627,28 +1657,82 @@ void drawUserManualScreen() {
            TEXT_SMALL);
 }
 
+void drawNeoPixelSettingsScreen() {
+  drawHeader("NEOPIXEL SETUP");
+  fillRect(0, HEADER_HEIGHT + 1, SCREEN_WIDTH,
+           SCREEN_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 2, COLOR_BG_PRIMARY);
+
+  int y = HEADER_HEIGHT + 20;
+  drawPremiumCard(MARGIN, y, SCREEN_WIDTH - MARGIN * 2, 130, COLOR_BG_CARD,
+                  COLOR_BORDER);
+
+  drawText(MARGIN + 20, y + 10, "1: RAINBOW STROBE",
+           (currentStrobeEffect == STROBE_RAINBOW) ? COLOR_CYAN_C : WHITE,
+           TEXT_SMALL);
+  drawText(MARGIN + 20, y + 40, "2: STATIC RED",
+           (currentStrobeEffect == STROBE_RED) ? COLOR_RED : WHITE, TEXT_SMALL);
+  drawText(MARGIN + 20, y + 70, "3: STATIC BLUE",
+           (currentStrobeEffect == STROBE_BLUE) ? COLOR_BLUE : WHITE,
+           TEXT_SMALL);
+  drawText(MARGIN + 20, y + 100, "4: STATIC GREEN",
+           (currentStrobeEffect == STROBE_GREEN) ? COLOR_GREEN : WHITE,
+           TEXT_SMALL);
+
+  drawFooter("#: Back  *: Select");
+}
+
+void handleNeoPixelInput(char key) {
+  if (key == '1')
+    currentStrobeEffect = STROBE_RAINBOW;
+  else if (key == '2')
+    currentStrobeEffect = STROBE_RED;
+  else if (key == '3')
+    currentStrobeEffect = STROBE_BLUE;
+  else if (key == '4')
+    currentStrobeEffect = STROBE_GREEN;
+  else if (key == '#' || key == '*') {
+    currentScreen = SCREEN_INFO;
+    drawInfoHubScreen();
+    return;
+  }
+  drawNeoPixelSettingsScreen();
+}
+
 void drawInfoHubScreen() {
   drawHeader("INFORMATION HUB");
   fillRect(0, HEADER_HEIGHT + 1, SCREEN_WIDTH,
            SCREEN_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 2, COLOR_BG_PRIMARY);
 
-  int y = HEADER_HEIGHT + 20;
-  drawPremiumCard(MARGIN, y, SCREEN_WIDTH - MARGIN * 2, 110, COLOR_BG_CARD,
+  int y = HEADER_HEIGHT + 25;
+  drawPremiumCard(MARGIN, y, SCREEN_WIDTH - MARGIN * 2, 120, COLOR_BG_CARD,
                   COLOR_BORDER);
 
   drawText(MARGIN + 20, y + 15, "1: DISPLAY SETTINGS", COLOR_CYAN_C,
            TEXT_MEDIUM);
-  drawText(MARGIN + 20, y + 45, "2: SENSOR & MPU CONFIG", COLOR_AMBER,
+  drawText(MARGIN + 20, y + 50, "2: SENSOR & MPU CONFIG", COLOR_AMBER,
            TEXT_MEDIUM);
-  drawText(MARGIN + 20, y + 75, "3: NEOPIXEL COLORS", COLOR_PURPLE,
+  drawText(MARGIN + 20, y + 85, "3: NEOPIXEL COLORS", COLOR_PURPLE,
            TEXT_MEDIUM);
 
-  int footerY = SCREEN_HEIGHT - FOOTER_HEIGHT;
-  drawFastHLine(0, footerY - 1, SCREEN_WIDTH, COLOR_ACCENT_LINE);
-  drawGradientV(0, footerY, SCREEN_WIDTH, FOOTER_HEIGHT, COLOR_BG_HEADER_ALT,
-                RGB565(5, 10, 15));
-  drawText(MARGIN, footerY + 12, "#:Back to Menu", COLOR_TEXT_MUTED,
-           TEXT_SMALL);
+  drawFooter("#:Back to Menu");
+}
+
+void handleInfoHubInput(char key) {
+  if (key == '1') {
+    currentScreen = SCREEN_SETTINGS;
+    drawSettingsScreen();
+  } else if (key == '2') {
+    calibrateMPU();
+  } else if (key == '3') {
+    currentScreen =
+        SCREEN_INFO; // Using SCREEN_INFO for NeoPixel as well or add new enum?
+    // Let's use a temporary jump or add to enum.
+    // I'll use handleKeyPress to route based on a 'subState' or just separate
+    // SCREENS. Adding SCREEN_NEO_SETTINGS to enum for clarity.
+  } else if (key == '#') {
+    currentScreen = SCREEN_MENU;
+    drawMenuScreen();
+  }
 }
 
 void drawSettingsScreen() {
@@ -1798,9 +1882,9 @@ void handleMenuInput(char key) {
   } else if (key == '*' || key == '4') { // Confirm/Selection
     currentScreen = SCREEN_CONFIRM;
     drawConfirmScreen();
-  } else if (key == '#' || key == 'C') { // Settings Menu
-    currentScreen = SCREEN_SETTINGS;
-    drawSettingsScreen();
+  } else if (key == '#' || key == 'C') { // Info Hub Menu
+    currentScreen = SCREEN_INFO;
+    drawInfoHubScreen();
   } else if (key == 'D') { // User Manual
     manualPage = 0;
     currentScreen = SCREEN_USER_MANUAL;
@@ -1874,6 +1958,23 @@ void handleKeyPress(char key) {
     break;
   case SCREEN_USER_MANUAL:
     handleManualInput(key);
+    break;
+  case SCREEN_INFO:
+    if (key == '1') {
+      currentScreen = SCREEN_SETTINGS;
+      drawSettingsScreen();
+    } else if (key == '2') {
+      calibrateMPU();
+    } else if (key == '3') {
+      currentScreen = SCREEN_NEO_SETTINGS;
+      drawNeoPixelSettingsScreen();
+    } else if (key == '#') {
+      currentScreen = SCREEN_MENU;
+      drawMenuScreen();
+    }
+    break;
+  case SCREEN_NEO_SETTINGS:
+    handleNeoPixelInput(key);
     break;
   case SCREEN_SYSTEM_INFO:
     if (key == '#') {
@@ -2008,6 +2109,8 @@ void loop() {
   case SCREEN_CONFIRM:
   case SCREEN_SYSTEM_INFO:
   case SCREEN_USER_MANUAL:
+  case SCREEN_INFO:
+  case SCREEN_NEO_SETTINGS:
   case SCREEN_SETTINGS: {
     if (keypad.getKeys()) {
       for (int i = 0; i < 10; i++) { // 10 is typical LIST_MAX
