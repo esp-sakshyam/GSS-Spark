@@ -19,10 +19,14 @@
  * ═══════════════════════════════════════════════════════════════════════════════════
  */
 
+#include "soc/gpio_reg.h"
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
 #include <Arduino.h>
 #include <Keypad.h>
 #include <LoRa.h>
 #include <SPI.h>
+#include <Wire.h>
 #include <vector>
 
 // ═══════════════════════════════════════════════════════════════════════════════════
@@ -61,8 +65,8 @@
 // ─────────────────────────────── DISPLAY CONFIG
 // ────────────────────────────────────
 
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 480
+#define SCREEN_WIDTH 480
+#define SCREEN_HEIGHT 320
 
 // ─────────────────────────────── RGB565 COLOR MACRO
 // ────────────────────────────────
@@ -131,18 +135,69 @@
 //                         LOW-LEVEL DISPLAY FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════════════
 
+// optimized writeData8 for ESP32-S3 (Reg Access)
 void writeData8(uint8_t d) {
-  digitalWrite(TFT_D0, (d) & 0x01);
-  digitalWrite(TFT_D1, (d >> 1) & 0x01);
-  digitalWrite(TFT_D2, (d >> 2) & 0x01);
-  digitalWrite(TFT_D3, (d >> 3) & 0x01);
-  digitalWrite(TFT_D4, (d >> 4) & 0x01);
-  digitalWrite(TFT_D5, (d >> 5) & 0x01);
-  digitalWrite(TFT_D6, (d >> 6) & 0x01);
-  digitalWrite(TFT_D7, (d >> 7) & 0x01);
+  uint32_t mask0_set = 0;
+  uint32_t mask0_clr = 0;
+  uint32_t mask1_set = 0;
+  uint32_t mask1_clr = 0;
 
-  digitalWrite(TFT_WR, LOW);
-  digitalWrite(TFT_WR, HIGH);
+  // Bit 0 -> GPIO 8
+  if (d & 0x01)
+    mask0_set |= (1 << 8);
+  else
+    mask0_clr |= (1 << 8);
+  // Bit 1 -> GPIO 9
+  if (d & 0x02)
+    mask0_set |= (1 << 9);
+  else
+    mask0_clr |= (1 << 9);
+  // Bit 2 -> GPIO 21
+  if (d & 0x04)
+    mask0_set |= (1 << 21);
+  else
+    mask0_clr |= (1 << 21);
+  // Bit 3 -> GPIO 46 (High Register, bit 14)
+  if (d & 0x08)
+    mask1_set |= (1 << 14);
+  else
+    mask1_clr |= (1 << 14);
+  // Bit 4 -> GPIO 10
+  if (d & 0x10)
+    mask0_set |= (1 << 10);
+  else
+    mask0_clr |= (1 << 10);
+  // Bit 5 -> GPIO 11
+  if (d & 0x20)
+    mask0_set |= (1 << 11);
+  else
+    mask0_clr |= (1 << 11);
+  // Bit 6 -> GPIO 13
+  if (d & 0x40)
+    mask0_set |= (1 << 13);
+  else
+    mask0_clr |= (1 << 13);
+  // Bit 7 -> GPIO 12
+  if (d & 0x80)
+    mask0_set |= (1 << 12);
+  else
+    mask0_clr |= (1 << 12);
+
+  // Apply Writes (Low Register)
+  if (mask0_set)
+    REG_WRITE(GPIO_OUT_W1TS_REG, mask0_set);
+  if (mask0_clr)
+    REG_WRITE(GPIO_OUT_W1TC_REG, mask0_clr);
+
+  // Apply Writes (High Register)
+  if (mask1_set)
+    REG_WRITE(GPIO_OUT1_W1TS_REG, mask1_set);
+  if (mask1_clr)
+    REG_WRITE(GPIO_OUT1_W1TC_REG, mask1_clr);
+
+  // Pulse WR (GPIO 7 - Low Register)
+  REG_WRITE(GPIO_OUT_W1TC_REG, (1 << 7)); // WR LOW
+  REG_WRITE(GPIO_OUT_W1TS_REG, (1 << 7)); // WR HIGH
 }
 
 void writeCommand(uint8_t cmd) {
@@ -196,11 +251,10 @@ void tftInit() {
   delay(150);
 
   writeCommand(0x3A);
-  writeDataByte(0x55);
-
+  writeDataByte(0x55); // 16-bit pixel format
   writeCommand(0x36);
-  writeDataByte(0x48);
-
+  writeDataByte(
+      0x28); // Landscape Flipped (MV|BGR) - Fixed the upside-down issue
   writeCommand(0x29);
   delay(50);
 }
@@ -992,12 +1046,11 @@ void drawSeparator(int16_t y) {
 //                     PART 5: DEVICE CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════════════════
 
-#define DEVICE_ID 3
+#define DEVICE_ID 4
 #define DEVICE_NAME "LifeLine TX"
 #define FIRMWARE_VERSION "v1.0.0-S3"
 
-// LoRa Configuration
-// LoRa Configuration (User Specified)
+// LoRa Configuration (Original Spec)
 #define LORA_CS 14
 #define LORA_RST 45
 #define LORA_DIO0 2
@@ -1011,13 +1064,29 @@ void drawSeparator(int16_t y) {
 // Keypad Configuration (User Specified Serial Layout)
 const byte KEYPAD_ROWS = 4;
 const byte KEYPAD_COLS = 4;
-char keypadLayout[KEYPAD_ROWS][KEYPAD_COLS] = {{'1', '2', '3', 'A'},
-                                               {'4', '5', '6', 'B'},
-                                               {'7', '8', '9', 'C'},
-                                               {'*', '0', '#', 'D'}};
-// Pins from user audio: 16, 36, 15, 37, 38, 39, 40, 41
-byte rowPins[KEYPAD_ROWS] = {16, 36, 15, 37};
-byte colPins[KEYPAD_COLS] = {38, 39, 40, 41};
+// Final remapping based on user feedback to align physical buttons with labels:
+char keypadLayout[KEYPAD_ROWS][KEYPAD_COLS] = {
+    {'D', '#', '0', '*'}, // Bottom Row (Physically) - R0
+    {'C', '9', '8', '7'}, // 3rd Row - R1
+    {'B', '6', '5', '4'}, // 2nd Row - R2
+    {'A', '3', '2', '1'}  // Top Row - R3
+};
+
+// MPU6050 & LANDSLIDE DETECTION
+#include <Adafruit_NeoPixel.h>
+Adafruit_NeoPixel neopixel(NEOPIXEL_COUNT, NEOPIXEL_PIN, NEO_GRB + NEO_KHZ800);
+
+Adafruit_MPU6050 mpu;
+#define I2C_SDA 47
+#define I2C_SCL 43
+bool mpuInitialized = false;
+
+float gyroXoffset = 0, gyroYoffset = 0, gyroZoffset = 0;
+float accXoffset = 0, accYoffset = 0, accZoffset = 0;
+
+// Keypad pins: 16, 36, 15, 38, 39, 40, 41, 42 (Serial Order)
+byte rowPins[KEYPAD_ROWS] = {39, 40, 41, 42};
+byte colPins[KEYPAD_COLS] = {16, 36, 15, 38};
 
 Keypad keypad = Keypad(makeKeymap(keypadLayout), rowPins, colPins, KEYPAD_ROWS,
                        KEYPAD_COLS);
@@ -1040,31 +1109,40 @@ const char *alertNames[ALERT_COUNT] = {
     "LOST PERSON",       "ANIMAL ATTACK",     "LANDSLIDE",
     "SNOW STORM",        "EQUIPMENT FAILURE", "OTHER EMERGENCY"};
 
-const char *alertNamesShort[ALERT_COUNT] = {
-    "EMERGENCY",   "MEDICAL EMERG", "MED SHORTAGE", "EVACUATION", "STATUS OK",
-    "INJURY",      "FOOD SHORT",    "WATER SHORT",  "WEATHER",    "LOST PERSON",
-    "ANIMAL ATTK", "LANDSLIDE",     "SNOW STORM",   "EQUIP FAIL", "OTHER"};
+const char *alertShort[ALERT_COUNT] = {
+    "EMERGENCY", "MEDICAL",   "MEDICINE", "EVACUATION", "STATUS OK",
+    "INJURY",    "FOOD",      "WATER",    "WEATHER",    "LOST PERSON",
+    "ANIMAL",    "LANDSLIDE", "SNOW",     "EQUIPMENT",  "OTHER"};
 
 const uint8_t alertPriority[ALERT_COUNT] = {0, 0, 2, 0, 3, 1, 2, 2,
                                             2, 1, 1, 1, 1, 2, 4};
+const char *priorityLabels[] = {"CRITICAL", "HIGH", "MEDIUM", "OK", "INFO"};
 
-char getAlertCode(int index) {
-  return (index >= 0 && index < ALERT_COUNT) ? 'A' + index : 'X';
+String getAlertCode(int index) {
+  // Return the index as a string (0-14).
+  // This ensures the UNMODIFIED Receiver shows the correct "alertIndex".
+  return String(index);
 }
 
 uint16_t getPriorityColor(uint8_t priority) {
   switch (priority) {
   case 0:
-    return COLOR_RED;
+    return COLOR_RED; // CRITICAL
   case 1:
-    return COLOR_ORANGE;
+    return COLOR_ORANGE; // HIGH
   case 2:
-    return COLOR_AMBER;
+    return COLOR_AMBER; // MEDIUM
   case 3:
-    return COLOR_GREEN;
+    return COLOR_GREEN; // OK
   default:
-    return COLOR_TEXT_SECONDARY;
+    return COLOR_TEXT_SECONDARY; // INFO
   }
+}
+
+const char *getPriorityText(int index) {
+  if (index < 0 || index >= ALERT_COUNT)
+    return "";
+  return priorityLabels[alertPriority[index]];
 }
 
 uint16_t getAlertColor(int index) {
@@ -1084,7 +1162,8 @@ enum ScreenState {
   SCREEN_SENDING,
   SCREEN_RESULT,
   SCREEN_SYSTEM_INFO,
-  SCREEN_USER_MANUAL
+  SCREEN_USER_MANUAL,
+  SCREEN_SETTINGS
 };
 
 ScreenState currentScreen = SCREEN_BOOT;
@@ -1104,6 +1183,88 @@ int retryCount = 0;
 int totalTransmissions = 0;
 int successfulTransmissions = 0;
 bool loraInitialized = false;
+
+// ═══════════════════════════════════════════════════════════════════════════════════
+//                     MPU & LANDSLIDE LOGIC (Moved here for scope)
+// ═══════════════════════════════════════════════════════════════════════════════════
+
+// Landslide Detection variables
+#define LANDSLIDE_ACCEL_THRESHOLD 2.5 // G's
+#define LANDSLIDE_DURATION 3000       // 3 seconds
+unsigned long landslideStartTime = 0;
+bool landslideDetecting = false;
+
+// Forward Declarations for Screen functions used in MPU logic
+void drawMenuScreen();
+void drawResultScreen();
+bool transmitAlert();
+
+// Visualization
+void drawMPUBarGraph(float magnitude) {
+  if (currentScreen != SCREEN_MENU || (magnitude < 1.2 && !landslideDetecting))
+    return;
+  int barX = SCREEN_WIDTH - 100;
+  int barY = HEADER_HEIGHT + 10;
+  int barW = 80;
+  int barH = 10;
+
+  // Visualizing motion intensity
+  int fillW = map(constrain(magnitude * 10, 10, 40), 10, 40, 0, barW);
+
+  drawRect(barX, barY, barW, barH, COLOR_BADGE_BG);
+  uint16_t barColor = (magnitude > 1.8) ? COLOR_RED : COLOR_GREEN;
+  fillRect(barX + 1, barY + 1, fillW, barH - 2, barColor);
+}
+
+void checkLandslide() {
+  if (!mpuInitialized)
+    return;
+
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
+
+  // Magnitude of acceleration vector
+  float totalAccel = sqrt(a.acceleration.x * a.acceleration.x +
+                          a.acceleration.y * a.acceleration.y +
+                          a.acceleration.z * a.acceleration.z) /
+                     9.81;
+
+  // Draw visualization on menu
+  drawMPUBarGraph(totalAccel);
+
+  // Landslide detection logic: 3 seconds of high acceleration
+  if (totalAccel > LANDSLIDE_ACCEL_THRESHOLD) {
+    if (!landslideDetecting) {
+      landslideDetecting = true;
+      landslideStartTime = millis();
+    } else if (millis() - landslideStartTime >= LANDSLIDE_DURATION) {
+      // TRANSMIT AUTOMATICALLY
+      Serial.println(F("[AUTO] Landslide Detected! Sending code 55..."));
+
+      // Visual/Haptic Feedback
+      for (int i = 0; i < 3; i++) {
+        neopixel.setPixelColor(0, neopixel.Color(255, 0, 0));
+        neopixel.show();
+        delay(100);
+        neopixel.setPixelColor(0, neopixel.Color(0, 0, 0));
+        neopixel.show();
+        delay(100);
+      }
+
+      selectedAlertIndex = 11; // LANDSLIDE
+      transmitAlert();
+
+      currentScreen = SCREEN_RESULT;
+      lastTransmitSuccess = true; // Assume success for auto-alert
+      resultStartTime = millis();
+      drawResultScreen();
+
+      landslideDetecting = false; // Reset
+    }
+  } else {
+    landslideDetecting = false;
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════════
 //                     PART 5: SCREEN DRAWING FUNCTIONS
@@ -1195,7 +1356,7 @@ void drawMenuScreen() {
       sprintf(numStr, "%2d", idx + 1);
       fillRoundRect(MARGIN + 6, itemY + 5, 24, 20, 3, COLOR_TEXT_DARK);
       drawText(MARGIN + 10, itemY + 8, numStr, COLOR_AMBER, TEXT_MEDIUM);
-      drawText(MARGIN + 36, itemY + 8, alertNamesShort[idx], COLOR_TEXT_DARK,
+      drawText(MARGIN + 36, itemY + 8, alertShort[idx], COLOR_TEXT_DARK,
                TEXT_MEDIUM);
     } else {
       drawRoundRect(MARGIN, itemY, itemW, MENU_ITEM_HEIGHT - 3, 4,
@@ -1203,12 +1364,17 @@ void drawMenuScreen() {
       char numStr[4];
       sprintf(numStr, "%2d", idx + 1);
       drawText(MARGIN + 8, itemY + 9, numStr, COLOR_TEXT_MUTED, TEXT_MEDIUM);
-      drawText(MARGIN + 32, itemY + 9, alertNamesShort[idx],
-               COLOR_TEXT_SECONDARY, TEXT_MEDIUM);
+      drawText(MARGIN + 32, itemY + 9, alertShort[idx], COLOR_TEXT_SECONDARY,
+               TEXT_MEDIUM);
     }
 
     uint16_t pc = getAlertColor(idx);
     fillCircle(SCREEN_WIDTH - MARGIN - 14, itemY + 14, 5, pc);
+
+    // Draw Priority Label Badge
+    const char *label = getPriorityText(idx);
+    int labelX = SCREEN_WIDTH - MARGIN - 80;
+    drawText(labelX, itemY + 9, label, pc, TEXT_SMALL);
   }
 
   // Footer
@@ -1236,10 +1402,15 @@ void drawConfirmScreen() {
   drawPremiumCard(MARGIN, cardY, SCREEN_WIDTH - MARGIN * 2, 60, COLOR_BG_CARD,
                   alertColor);
   fillRect(MARGIN, cardY, 6, 60, alertColor);
-  drawText(MARGIN + 18, cardY + 14, alertNames[selectedAlertIndex], alertColor,
+  drawText(MARGIN + 18, cardY + 10, alertNames[selectedAlertIndex], alertColor,
            TEXT_MEDIUM);
 
-  char codeStr[4] = {getAlertCode(selectedAlertIndex), '\0'};
+  // Priority Tag
+  drawText(MARGIN + 18, cardY + 35, getPriorityText(selectedAlertIndex),
+           COLOR_TEXT_MUTED, TEXT_SMALL);
+
+  char codeStr[5];
+  sprintf(codeStr, "%d", getAlertCode(selectedAlertIndex));
   fillRoundRect(SCREEN_WIDTH - MARGIN - 40, cardY + 18, 30, 24, 4, alertColor);
   drawText(SCREEN_WIDTH - MARGIN - 32, cardY + 22, codeStr, COLOR_TEXT_DARK,
            TEXT_MEDIUM);
@@ -1276,7 +1447,7 @@ void drawSendingScreen() {
                   COLOR_ORANGE_DARK);
   fillRect(MARGIN, cardY, 5, 50, COLOR_ORANGE);
   drawText(MARGIN + 14, cardY + 10, "SENDING:", COLOR_TEXT_MUTED, TEXT_SMALL);
-  drawText(MARGIN + 14, cardY + 28, alertNamesShort[selectedAlertIndex], WHITE,
+  drawText(MARGIN + 14, cardY + 28, alertShort[selectedAlertIndex], WHITE,
            TEXT_MEDIUM);
 }
 
@@ -1295,8 +1466,7 @@ void drawResultScreen() {
     }
 
     drawTextCentered(180, "Message Sent!", COLOR_GREEN_BRIGHT, TEXT_MEDIUM);
-    drawTextCentered(210, alertNamesShort[selectedAlertIndex], WHITE,
-                     TEXT_SMALL);
+    drawTextCentered(210, alertShort[selectedAlertIndex], WHITE, TEXT_SMALL);
     drawTextCentered(SCREEN_HEIGHT - 50, "Returning...", COLOR_TEXT_MUTED,
                      TEXT_SMALL);
   } else {
@@ -1421,6 +1591,69 @@ void drawUserManualScreen() {
            TEXT_SMALL);
 }
 
+void drawSettingsScreen() {
+  drawHeader("SETTINGS & CALIBRATION");
+  fillRect(0, HEADER_HEIGHT + 1, SCREEN_WIDTH,
+           SCREEN_HEIGHT - HEADER_HEIGHT - FOOTER_HEIGHT - 2, COLOR_BG_PRIMARY);
+
+  int y = HEADER_HEIGHT + 30;
+  drawPremiumCard(MARGIN, y, SCREEN_WIDTH - MARGIN * 2, 100, COLOR_BG_CARD,
+                  COLOR_BORDER);
+
+  drawText(MARGIN + 20, y + 20, "MPU6050 SENSOR", COLOR_CYAN_C, TEXT_MEDIUM);
+
+  if (mpuInitialized) {
+    drawText(MARGIN + 20, y + 50, "Status: CONNECTED", COLOR_GREEN, TEXT_SMALL);
+    drawText(MARGIN + 20, y + 70, "1: CALIBRATE NOW", COLOR_AMBER, TEXT_SMALL);
+  } else {
+    drawText(MARGIN + 20, y + 50, "Status: NOT FOUND", COLOR_RED, TEXT_SMALL);
+    drawText(MARGIN + 20, y + 70, "Check pins 36(SDA), 37(SCL)",
+             COLOR_TEXT_MUTED, TEXT_SMALL);
+  }
+
+  int footerY = SCREEN_HEIGHT - FOOTER_HEIGHT;
+  drawFastHLine(0, footerY - 1, SCREEN_WIDTH, COLOR_ACCENT_LINE);
+  drawGradientV(0, footerY, SCREEN_WIDTH, FOOTER_HEIGHT, COLOR_BG_HEADER_ALT,
+                RGB565(5, 10, 15));
+  drawText(MARGIN, footerY + 12, "#:Back to Menu", COLOR_TEXT_MUTED,
+           TEXT_SMALL);
+}
+
+void calibrateMPU() {
+  if (!mpuInitialized)
+    return;
+
+  fillRect(0, 100, SCREEN_WIDTH, 120, COLOR_BG_PRIMARY);
+  drawTextCentered(130, "CALIBRATING...", COLOR_AMBER, 2);
+  drawTextCentered(160, "KEEP DEVICE STILL", COLOR_TEXT_SECONDARY, 1);
+
+  // Average 100 readings
+  float ax = 0, ay = 0, az = 0;
+  float gx = 0, gy = 0, gz = 0;
+
+  for (int i = 0; i < 100; i++) {
+    sensors_event_t a, g, temp;
+    mpu.getEvent(&a, &g, &temp);
+    ax += a.acceleration.x;
+    ay += a.acceleration.y;
+    az += a.acceleration.z;
+    gx += g.gyro.x;
+    gy += g.gyro.y;
+    gz += g.gyro.z;
+    delay(10);
+  }
+
+  accXoffset = ax / 100.0;
+  accYoffset = ay / 100.0;
+  accZoffset = (az / 100.0) - 9.81; // Gravity
+  gyroXoffset = gx / 100.0;
+  gyroYoffset = gy / 100.0;
+  gyroZoffset = gz / 100.0;
+
+  drawSettingsScreen();
+  drawTextCentered(220, "CALIBRATION COMPLETE!", COLOR_GREEN, 1);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════════
 //                     PART 6: INPUT HANDLERS & LORA
 // ═══════════════════════════════════════════════════════════════════════════════════
@@ -1429,8 +1662,9 @@ bool transmitAlert() {
   if (!loraInitialized)
     return false;
 
-  char packet[16];
-  sprintf(packet, "TX%03d,%c", DEVICE_ID, getAlertCode(selectedAlertIndex));
+  char packet[20];
+  sprintf(packet, "TX%03d,%s", DEVICE_ID,
+          getAlertCode(selectedAlertIndex).c_str());
   Serial.printf("[LORA] TX: %s\n", packet);
 
   LoRa.beginPacket();
@@ -1445,34 +1679,44 @@ bool transmitAlert() {
 }
 
 void handleMenuInput(char key) {
-  if (key >= '1' && key <= '9') {
+  // Digit shortcut handling (Specific user mapping)
+  if (key == '1')
+    selectedAlertIndex = 0; // EMERGENCY
+  else if (key == '2')
+    selectedAlertIndex = 2; // MEDICINE
+  else if (key == '3')
+    selectedAlertIndex = 4; // STATUS OK
+  else if (key == '5' || key == '6')
+    selectedAlertIndex = 5; // INJURY
+  else if (key == '7')
+    selectedAlertIndex = 10; // LOST PERSON
+  else if (key == 'C')
+    selectedAlertIndex = 1; // MEDICAL
+  else if (key >= '1' && key <= '9') {
     int idx = key - '1';
-    if (idx < ALERT_COUNT) {
+    if (idx < ALERT_COUNT)
       selectedAlertIndex = idx;
-      currentScreen = SCREEN_CONFIRM;
-      drawConfirmScreen();
-    }
-  } else if (key == '0' && 9 < ALERT_COUNT) {
+  } else if (key == '0')
     selectedAlertIndex = 9;
-    currentScreen = SCREEN_CONFIRM;
-    drawConfirmScreen();
-  } else if (key == 'A') {
+
+  // Navigation & Actions
+  if (key == 'A' || key == '6') { // UP
     selectedAlertIndex =
         (selectedAlertIndex > 0) ? selectedAlertIndex - 1 : ALERT_COUNT - 1;
     updateMenuScroll();
     drawMenuScreen();
-  } else if (key == 'B') {
+  } else if (key == 'B' || key == '9') { // DOWN
     selectedAlertIndex =
         (selectedAlertIndex < ALERT_COUNT - 1) ? selectedAlertIndex + 1 : 0;
     updateMenuScroll();
     drawMenuScreen();
-  } else if (key == '*') {
+  } else if (key == '*' || key == '4') { // Confirm/Selection
     currentScreen = SCREEN_CONFIRM;
     drawConfirmScreen();
-  } else if (key == 'C') {
+  } else if (key == '#') { // Info Toggle
     currentScreen = SCREEN_SYSTEM_INFO;
     drawSystemInfoScreen();
-  } else if (key == 'D') {
+  } else if (key == 'D') { // User Manual
     manualPage = 0;
     currentScreen = SCREEN_USER_MANUAL;
     drawUserManualScreen();
@@ -1602,6 +1846,25 @@ void setup() {
   // Initialize Animations
   initLoveAnimations();
 
+  // Initialize NeoPixel
+  neopixel.begin();
+  neopixel.setBrightness(100);
+  neopixel.setPixelColor(0, neopixel.Color(0, 50, 0));
+  neopixel.show();
+
+  // Initialize MPU6050
+  Serial.println(F("[INIT] MPU6050..."));
+  Wire.begin(I2C_SDA, I2C_SCL);
+  if (mpu.begin()) {
+    mpuInitialized = true;
+    mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+    mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+    Serial.println(F("[INIT] MPU6050 OK"));
+  } else {
+    Serial.println(F("[INIT] MPU6050 FAILED"));
+  }
+
   // Check for secret key 'D' to enter Love Mode directly
   char key = keypad.getKey();
   if (key == 'D') {
@@ -1619,6 +1882,9 @@ void setup() {
 
 void loop() {
   unsigned long now = millis();
+
+  // Check Sensors
+  checkLandslide();
 
   switch (currentScreen) {
   case SCREEN_BOOT:
@@ -1641,9 +1907,27 @@ void loop() {
   case SCREEN_CONFIRM:
   case SCREEN_SYSTEM_INFO:
   case SCREEN_USER_MANUAL: {
-    char key = keypad.getKey();
-    if (key)
-      handleKeyPress(key);
+    if (keypad.getKeys()) {
+      for (int i = 0; i < 10; i++) { // 10 is typical LIST_MAX
+        if (keypad.key[i].stateChanged && keypad.key[i].kstate == PRESSED) {
+          char key = keypad.key[i].kchar;
+          int code = keypad.key[i].kcode;
+          int r = code / KEYPAD_COLS;
+          int c = code % KEYPAD_COLS;
+
+          // Debug GPIO in bottom-right corner
+          char dbg[32];
+          sprintf(dbg, "R%d:P%d C%d:P%d", r, rowPins[r], c, colPins[c]);
+          int16_t tw = getTextWidth(dbg, TEXT_SMALL);
+          fillRect(SCREEN_WIDTH - tw - 12, SCREEN_HEIGHT - 15, tw + 10, 14,
+                   COLOR_BG_PRIMARY);
+          drawText(SCREEN_WIDTH - tw - 10, SCREEN_HEIGHT - 12, dbg,
+                   COLOR_ORANGE, TEXT_SMALL);
+
+          handleKeyPress(key);
+        }
+      }
+    }
   } break;
 
     // We need to add SCREEN_LOVE_MODE case if we added it to enum.
