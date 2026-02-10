@@ -11,7 +11,7 @@ In rural Nepal—specifically in the remote Himal and Pahad regions—reliable c
 - power outage
 - mountaineers sos cant be sent as satellite connectivity is expensive and cellular might not be available(delayed rescue misson)
 
-💡 The Solutions
+💡 The Solution
 We built a resilient, off-grid Emergency Response System using LoRa Mesh Technology.
 This device operates independently of the internet or cellular networks to:
 
